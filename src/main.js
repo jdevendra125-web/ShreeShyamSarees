@@ -11,6 +11,9 @@ const WHATSAPP_GROUP_LINK = "https://chat.whatsapp.com/K2jtomZ8v0zBQDKQydA4im?s=
 const STORE_ADDRESS = "G2, Tapasya Apartment, Bhayandar West, Near Madhu Maternity Hospital, 401101";
 const FIRM_NAME = "Shree Shyam Sarees";
 
+const DEFAULT_SUPABASE_URL = "https://chientorhbzoqgzusnyp.supabase.co";
+const DEFAULT_SUPABASE_KEY = "sb_publishable_dwNTrG7o9s5htPN_PS09Sg_EWyLwkh1";
+
 // DOM Elements
 const formVisitor = document.getElementById('form-visitor');
 const btnSubmit = document.getElementById('btn-submit');
@@ -50,8 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- SETTINGS MANAGEMENT ---
 function loadSettings() {
-  const url = localStorage.getItem('supabase_url') || '';
-  const key = localStorage.getItem('supabase_anon_key') || '';
+  const url = localStorage.getItem('supabase_url') || DEFAULT_SUPABASE_URL;
+  const key = localStorage.getItem('supabase_anon_key') || DEFAULT_SUPABASE_KEY;
   inputSettingsUrl.value = url;
   inputSettingsKey.value = key;
 }
@@ -62,8 +65,8 @@ function saveSettings(url, key) {
 }
 
 async function initSupabase() {
-  const url = localStorage.getItem('supabase_url');
-  const key = localStorage.getItem('supabase_anon_key');
+  const url = localStorage.getItem('supabase_url') || DEFAULT_SUPABASE_URL;
+  const key = localStorage.getItem('supabase_anon_key') || DEFAULT_SUPABASE_KEY;
 
   if (!url || !key) {
     updateConnectionStatus(false, "Disconnected (Please configure settings)");
