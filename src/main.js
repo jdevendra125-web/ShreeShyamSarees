@@ -1251,6 +1251,7 @@ function setupOwnerEventListeners() {
       const price = parseFloat(document.getElementById('edit-price').value);
       const salePriceInput = document.getElementById('edit-sale-price').value;
       const salePrice = salePriceInput ? parseFloat(salePriceInput) : null;
+      const newPhotoFile = document.getElementById('edit-photo-file').files[0];
 
       if (!productId || !sku || !name || isNaN(price)) {
         alert("Please fill in all required fields (SKU Code, Product Name, and Price).");
@@ -1272,17 +1273,45 @@ function setupOwnerEventListeners() {
       btnSaveEditStock.disabled = true;
 
       try {
+        let newPhotoUrl = null;
+        if (newPhotoFile) {
+          const fileExt = newPhotoFile.name.split('.').pop();
+          const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 10)}.${fileExt}`;
+          
+          const { data: uploadData, error: uploadError } = await supabase
+            .storage
+            .from('product-photos')
+            .upload(fileName, newPhotoFile, {
+              contentType: newPhotoFile.type
+            });
+
+          if (uploadError) throw uploadError;
+
+          const { data: publicUrlData } = supabase
+            .storage
+            .from('product-photos')
+            .getPublicUrl(fileName);
+
+          newPhotoUrl = publicUrlData.publicUrl;
+        }
+
         // 1. Update product info in Supabase
+        const updatePayload = {
+          sku: sku,
+          name: name,
+          description: desc,
+          price: price,
+          sale_price: salePrice,
+          colors: colors
+        };
+
+        if (newPhotoUrl) {
+          updatePayload.photo_url = newPhotoUrl;
+        }
+
         const { error: pError } = await supabase
           .from('products')
-          .update({
-            sku: sku,
-            name: name,
-            description: desc,
-            price: price,
-            sale_price: salePrice,
-            colors: colors
-          })
+          .update(updatePayload)
           .eq('id', productId);
 
         if (pError) throw pError;
@@ -1608,6 +1637,20 @@ function renderStockTable() {
       document.getElementById('edit-colors').value = product.colors || '';
       document.getElementById('edit-price').value = product.price;
       document.getElementById('edit-sale-price').value = product.sale_price || '';
+
+      // Populate current photo preview
+      const previewContainer = document.getElementById('edit-photo-preview-container');
+      if (previewContainer) {
+        if (product.photo_url) {
+          previewContainer.innerHTML = `<img src="${product.photo_url}" style="width: 100px; height: 133px; object-fit: cover; border-radius: 8px; border: 1px solid var(--color-border);" />`;
+        } else {
+          previewContainer.innerHTML = `<p style="font-size: 0.85rem; color: var(--color-text-muted); font-style: italic;">No photo uploaded yet.</p>`;
+        }
+      }
+
+      // Reset file input element
+      const editPhotoInput = document.getElementById('edit-photo-file');
+      if (editPhotoInput) editPhotoInput.value = '';
 
       // Populate size fields helper
       const sizeQty = (sz) => {
