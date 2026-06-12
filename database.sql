@@ -60,29 +60,56 @@ ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
 
 -- Visitors Policies
+DROP POLICY IF EXISTS "Allow public insert visitors" ON visitors;
 CREATE POLICY "Allow public insert visitors" ON visitors FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public select visitors" ON visitors;
 CREATE POLICY "Allow public select visitors" ON visitors FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow public update visitors" ON visitors;
 CREATE POLICY "Allow public update visitors" ON visitors FOR UPDATE USING (true);
 
 -- Products Policies
+DROP POLICY IF EXISTS "Allow public select products" ON products;
 CREATE POLICY "Allow public select products" ON products FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow public insert products" ON products;
 CREATE POLICY "Allow public insert products" ON products FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public update products" ON products;
 CREATE POLICY "Allow public update products" ON products FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Allow public delete products" ON products;
 CREATE POLICY "Allow public delete products" ON products FOR DELETE USING (true);
 
 -- Stock Policies
+DROP POLICY IF EXISTS "Allow public select stock" ON product_stock;
 CREATE POLICY "Allow public select stock" ON product_stock FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow public insert stock" ON product_stock;
 CREATE POLICY "Allow public insert stock" ON product_stock FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public update stock" ON product_stock;
 CREATE POLICY "Allow public update stock" ON product_stock FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Allow public delete stock" ON product_stock;
 CREATE POLICY "Allow public delete stock" ON product_stock FOR DELETE USING (true);
 
 -- Orders Policies
+DROP POLICY IF EXISTS "Allow public select orders" ON orders;
 CREATE POLICY "Allow public select orders" ON orders FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow public insert orders" ON orders;
 CREATE POLICY "Allow public insert orders" ON orders FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public update orders" ON orders;
 CREATE POLICY "Allow public update orders" ON orders FOR UPDATE USING (true);
 
 -- Sales Policies
+DROP POLICY IF EXISTS "Allow public select sales" ON sales;
 CREATE POLICY "Allow public select sales" ON sales FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow public insert sales" ON sales;
 CREATE POLICY "Allow public insert sales" ON sales FOR INSERT WITH CHECK (true);
 
 -- 6. Setup Supabase Storage for Saree Photos
@@ -92,14 +119,17 @@ VALUES ('product-photos', 'product-photos', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Policies to allow anyone at the stall to upload and view photos
+DROP POLICY IF EXISTS "Allow public select from product-photos" ON storage.objects;
 CREATE POLICY "Allow public select from product-photos" 
 ON storage.objects FOR SELECT 
 USING (bucket_id = 'product-photos');
 
+DROP POLICY IF EXISTS "Allow public upload to product-photos" ON storage.objects;
 CREATE POLICY "Allow public upload to product-photos" 
 ON storage.objects FOR INSERT 
 WITH CHECK (bucket_id = 'product-photos');
 
+DROP POLICY IF EXISTS "Allow public delete from product-photos" ON storage.objects;
 CREATE POLICY "Allow public delete from product-photos" 
 ON storage.objects FOR DELETE 
 USING (bucket_id = 'product-photos');
