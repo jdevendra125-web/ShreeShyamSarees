@@ -1144,10 +1144,112 @@ function setupOwnerEventListeners() {
     });
   });
 
+  // --- EDIT STOCK MODAL LISTENERS ---
+  const modalEditStock = document.getElementById('modal-edit-stock');
+  const btnCloseEditStock = document.getElementById('btn-close-edit-stock');
+  const btnCancelEditStock = document.getElementById('btn-cancel-edit-stock');
+  const btnSaveEditStock = document.getElementById('btn-save-edit-stock');
+
+  if (btnCloseEditStock) {
+    btnCloseEditStock.addEventListener('click', () => {
+      modalEditStock.classList.add('hidden');
+    });
+  }
+
+  if (btnCancelEditStock) {
+    btnCancelEditStock.addEventListener('click', () => {
+      modalEditStock.classList.add('hidden');
+    });
+  }
+
+  if (btnSaveEditStock) {
+    btnSaveEditStock.addEventListener('click', async () => {
+      const productId = document.getElementById('edit-product-id').value;
+      const sku = document.getElementById('edit-sku').value.trim();
+      const name = document.getElementById('edit-name').value.trim();
+      const desc = document.getElementById('edit-desc').value.trim();
+      const price = parseFloat(document.getElementById('edit-price').value);
+      const salePriceInput = document.getElementById('edit-sale-price').value;
+      const salePrice = salePriceInput ? parseFloat(salePriceInput) : null;
+
+      if (!productId || !sku || !name || isNaN(price)) {
+        alert("Please fill in all required fields (SKU Code, Product Name, and Price).");
+        return;
+      }
+
+      const sizes = [
+        { name: 'Free Size', qty: parseInt(document.getElementById('edit-qty-freesize').value) || 0 },
+        { name: 'S', qty: parseInt(document.getElementById('edit-qty-s').value) || 0 },
+        { name: 'M', qty: parseInt(document.getElementById('edit-qty-m').value) || 0 },
+        { name: 'L', qty: parseInt(document.getElementById('edit-qty-l').value) || 0 },
+        { name: 'XL', qty: parseInt(document.getElementById('edit-qty-xl').value) || 0 },
+        { name: 'XXL', qty: parseInt(document.getElementById('edit-qty-xxl').value) || 0 },
+        { name: 'XXXL', qty: parseInt(document.getElementById('edit-qty-xxxl').value) || 0 }
+      ];
+
+      const spinner = document.getElementById('edit-stock-spinner');
+      if (spinner) spinner.classList.remove('hidden');
+      btnSaveEditStock.disabled = true;
+
+      try {
+        // 1. Update product info in Supabase
+        const { error: pError } = await supabase
+          .from('products')
+          .update({
+            sku: sku,
+            name: name,
+            description: desc,
+            price: price,
+            sale_price: salePrice
+          })
+          .eq('id', productId);
+
+        if (pError) throw pError;
+
+        // 2. Clear old stock records and insert updated ones
+        const { error: deleteError } = await supabase
+          .from('product_stock')
+          .delete()
+          .eq('product_id', productId);
+
+        if (deleteError) throw deleteError;
+
+        const stockInserts = sizes.map(s => ({
+          product_id: productId,
+          size: s.name,
+          quantity: s.qty
+        }));
+
+        const { error: insertError } = await supabase
+          .from('product_stock')
+          .insert(stockInserts);
+
+        if (insertError) throw insertError;
+
+        alert(`Product "${name}" and size-wise stock updated successfully!`);
+        modalEditStock.classList.add('hidden');
+        
+        // Refresh local stock inventory
+        await loadStockInventory();
+        // Also reload customer storefront catalog in background
+        if (typeof loadCatalogProducts === 'function') {
+          await loadCatalogProducts();
+        }
+      } catch (err) {
+        console.error("Edit product failed:", err);
+        alert(`Failed to update product: ${err.message}`);
+      } finally {
+        if (spinner) spinner.classList.add('hidden');
+        btnSaveEditStock.disabled = false;
+      }
+    });
+  }
+
   // Close modals on overlay clicks
   window.addEventListener('click', (e) => {
     const modalInvoice = document.getElementById('modal-invoice');
     if (e.target === modalInvoice) modalInvoice.classList.add('hidden');
+    if (e.target === modalEditStock) modalEditStock.classList.add('hidden');
   });
 }
 
@@ -1398,13 +1500,50 @@ function renderStockTable() {
         <td data-label="Sizes available (Qty)">${sizesHTML}</td>
         <td data-label="Total Stock" style="font-weight:700;">${totalStock}</td>
         <td data-label="Actions">
-          <button class="btn-table-whatsapp btn-delete-product" style="border-color:var(--color-error); color:var(--color-error);" data-id="${product.id}">
-            <span>Delete</span>
-          </button>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-table-edit btn-edit-product" data-id="${product.id}">
+              <span>Edit</span>
+            </button>
+            <button class="btn-table-delete btn-delete-product" data-id="${product.id}">
+              <span>Delete</span>
+            </button>
+          </div>
         </td>
       </tr>
     `;
   }).join('');
+
+  // Event listeners for edit buttons
+  document.querySelectorAll('.btn-edit-product').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      const product = products.find(p => p.id === id);
+      if (!product) return;
+
+      document.getElementById('edit-product-id').value = product.id;
+      document.getElementById('edit-sku').value = product.sku || '';
+      document.getElementById('edit-name').value = product.name;
+      document.getElementById('edit-desc').value = product.description || '';
+      document.getElementById('edit-price').value = product.price;
+      document.getElementById('edit-sale-price').value = product.sale_price || '';
+
+      // Populate size fields helper
+      const sizeQty = (sz) => {
+        const found = stockLevels.find(s => s.product_id === product.id && s.size === sz);
+        return found ? found.quantity : 0;
+      };
+
+      document.getElementById('edit-qty-freesize').value = sizeQty('Free Size');
+      document.getElementById('edit-qty-s').value = sizeQty('S');
+      document.getElementById('edit-qty-m').value = sizeQty('M');
+      document.getElementById('edit-qty-l').value = sizeQty('L');
+      document.getElementById('edit-qty-xl').value = sizeQty('XL');
+      document.getElementById('edit-qty-xxl').value = sizeQty('XXL');
+      document.getElementById('edit-qty-xxxl').value = sizeQty('XXXL');
+
+      document.getElementById('modal-edit-stock').classList.remove('hidden');
+    });
+  });
 
   // Event listeners for delete buttons
   document.querySelectorAll('.btn-delete-product').forEach(btn => {
