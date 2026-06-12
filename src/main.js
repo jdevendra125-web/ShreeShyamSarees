@@ -199,6 +199,24 @@ function renderCatalog() {
       `;
     }
 
+    // Color options buttons
+    const colorsList = product.colors ? product.colors.split(',').map(c => c.trim()).filter(Boolean) : [];
+    let colorsHTML = '';
+    if (colorsList.length > 0) {
+      colorsHTML = `
+        <div class="product-sizes-container" style="margin-top: 10px;">
+          <div class="sizes-title">Select Color</div>
+          <div class="colors-options" data-product-id="${product.id}" style="display:flex; gap:6px; flex-wrap:wrap;">
+            ${colorsList.map(color => `
+              <button class="color-option-btn" data-color="${color}">
+                ${color}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
     const priceHTML = product.sale_price 
       ? `<span class="original-price">₹${product.price}</span><span class="sale-price">₹${product.sale_price}</span>`
       : `<span class="sale-price">₹${product.price}</span>`;
@@ -227,6 +245,7 @@ function renderCatalog() {
           </div>
 
           ${sizesHTML}
+          ${colorsHTML}
 
           <button class="btn-primary btn-add-to-cart" data-id="${product.id}" ${variants.length === 0 ? 'disabled' : ''}>
             <span>Add to Cart</span>
@@ -242,6 +261,17 @@ function renderCatalog() {
       btn.addEventListener('click', (e) => {
         // Toggle selected state
         container.querySelectorAll('.size-option-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      });
+    });
+  });
+
+  // Add event listeners to color buttons
+  document.querySelectorAll('.colors-options').forEach(container => {
+    container.querySelectorAll('.color-option-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        // Toggle selected state
+        container.querySelectorAll('.color-option-btn').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
       });
     });
@@ -266,17 +296,34 @@ function renderCatalog() {
 
       const selectedSize = selectedBtn.getAttribute('data-size');
       const maxQty = parseInt(selectedBtn.getAttribute('data-qty'), 10);
+
+      // Check colors
+      const product = products.find(p => p.id === productId);
+      const hasColors = product && product.colors && product.colors.trim().length > 0;
+      let selectedColor = '';
+
+      if (hasColors) {
+        const colorContainer = document.querySelector(`.colors-options[data-product-id="${productId}"]`);
+        if (colorContainer) {
+          const selectedColorBtn = colorContainer.querySelector('.color-option-btn.selected');
+          if (!selectedColorBtn) {
+            alert("Please select a color first!");
+            return;
+          }
+          selectedColor = selectedColorBtn.getAttribute('data-color');
+        }
+      }
       
-      addToCart(productId, selectedSize, maxQty);
+      addToCart(productId, selectedSize, maxQty, selectedColor);
     });
   });
 }
 
-function addToCart(productId, size, maxQty) {
+function addToCart(productId, size, maxQty, color) {
   const product = products.find(p => p.id === productId);
   if (!product) return;
 
-  const existing = cart.find(item => item.id === productId && item.size === size);
+  const existing = cart.find(item => item.id === productId && item.size === size && item.color === color);
   const currentQty = existing ? existing.qty : 0;
 
   if (currentQty + 1 > maxQty) {
@@ -291,6 +338,7 @@ function addToCart(productId, size, maxQty) {
       id: product.id,
       name: product.name,
       size: size,
+      color: color || '',
       qty: 1,
       price: product.sale_price || product.price,
       photo_url: product.photo_url,
@@ -336,16 +384,16 @@ function renderCartDrawer() {
         <img src="${finalPhoto}" class="cart-item-img" alt="${item.name}" onerror="this.src='${defaultPhoto}'"/>
         <div class="cart-item-details">
           <div class="cart-item-name">${escapeHTML(item.name)}</div>
-          <div class="cart-item-size-tag">Size: ${item.size}</div>
+          <div class="cart-item-size-tag">Size: ${item.size}${item.color ? ` | Color: ${item.color}` : ''}</div>
           <div class="cart-item-price">₹${item.price}</div>
         </div>
         <div class="cart-item-actions">
           <div class="cart-qty-control">
-            <button class="cart-qty-btn btn-qty-minus" data-id="${item.id}" data-size="${item.size}">-</button>
+            <button class="cart-qty-btn btn-qty-minus" data-id="${item.id}" data-size="${item.size}" data-color="${item.color}">-</button>
             <span class="cart-qty-val">${item.qty}</span>
-            <button class="cart-qty-btn btn-qty-plus" data-id="${item.id}" data-size="${item.size}">+</button>
+            <button class="cart-qty-btn btn-qty-plus" data-id="${item.id}" data-size="${item.size}" data-color="${item.color}">+</button>
           </div>
-          <button class="btn-remove-item" data-id="${item.id}" data-size="${item.size}">Remove</button>
+          <button class="btn-remove-item" data-id="${item.id}" data-size="${item.size}" data-color="${item.color}">Remove</button>
         </div>
       </div>
     `;
@@ -363,7 +411,8 @@ function renderCartDrawer() {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-id');
       const size = btn.getAttribute('data-size');
-      changeCartQty(id, size, -1);
+      const color = btn.getAttribute('data-color');
+      changeCartQty(id, size, color, -1);
     });
   });
 
@@ -371,7 +420,8 @@ function renderCartDrawer() {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-id');
       const size = btn.getAttribute('data-size');
-      changeCartQty(id, size, 1);
+      const color = btn.getAttribute('data-color');
+      changeCartQty(id, size, color, 1);
     });
   });
 
@@ -379,18 +429,19 @@ function renderCartDrawer() {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-id');
       const size = btn.getAttribute('data-size');
-      removeFromCart(id, size);
+      const color = btn.getAttribute('data-color');
+      removeFromCart(id, size, color);
     });
   });
 }
 
-function changeCartQty(id, size, delta) {
-  const item = cart.find(i => i.id === id && i.size === size);
+function changeCartQty(id, size, color, delta) {
+  const item = cart.find(i => i.id === id && i.size === size && i.color === color);
   if (!item) return;
 
   const newQty = item.qty + delta;
   if (newQty <= 0) {
-    removeFromCart(id, size);
+    removeFromCart(id, size, color);
     return;
   }
 
@@ -404,8 +455,8 @@ function changeCartQty(id, size, delta) {
   renderCartDrawer();
 }
 
-function removeFromCart(id, size) {
-  cart = cart.filter(i => !(i.id === id && i.size === size));
+function removeFromCart(id, size, color) {
+  cart = cart.filter(i => !(i.id === id && i.size === size && i.color === color));
   updateCartBadge();
   renderCartDrawer();
 }
@@ -499,6 +550,7 @@ function setupCustomerEventListeners() {
           id: item.id,
           name: item.name,
           size: item.size,
+          color: item.color || '',
           qty: item.qty,
           price: item.price
         }));
@@ -557,7 +609,7 @@ async function sendEmailJSNotification(order, name, phone, address, items, total
   }
 
   // Build items description
-  const itemsText = items.map(i => `- ${i.name} (Size: ${i.size}) x ${i.qty} @ ₹${i.price}`).join('\n');
+  const itemsText = items.map(i => `- ${i.name} (Size: ${i.size}${i.color ? `, Color: ${i.color}` : ''}) x ${i.qty} @ ₹${i.price}`).join('\n');
 
   const templateParams = {
     to_email: recipient,
@@ -796,6 +848,7 @@ function setupOwnerEventListeners() {
       const sku = document.getElementById('stock-sku').value.trim();
       const name = document.getElementById('stock-name').value.trim();
       const desc = document.getElementById('stock-desc').value.trim();
+      const colors = document.getElementById('stock-colors').value.trim();
       const price = parseFloat(document.getElementById('stock-price').value);
       const salePriceInput = document.getElementById('stock-sale-price').value;
       const salePrice = salePriceInput ? parseFloat(salePriceInput) : null;
@@ -851,7 +904,8 @@ function setupOwnerEventListeners() {
             description: desc,
             price: price,
             sale_price: salePrice,
-            photo_url: photoUrl
+            photo_url: photoUrl,
+            colors: colors
           }])
           .select();
 
@@ -877,7 +931,8 @@ function setupOwnerEventListeners() {
         alert(`Product "${name}" saved and inventory initialized size-wise!`);
         formStock.reset();
         
-        // Reset size inputs to default
+        // Reset colors and size inputs to default
+        document.getElementById('stock-colors').value = "";
         document.getElementById('qty-freesize').value = "10";
         document.getElementById('qty-s').value = "0";
         document.getElementById('qty-m').value = "0";
@@ -920,9 +975,12 @@ function setupOwnerEventListeners() {
     basketSkuInput.addEventListener('input', () => {
       const enteredSku = basketSkuInput.value.trim().toLowerCase();
       const sizeSelect = document.getElementById('basket-size-select');
+      const colorSelect = document.getElementById('basket-color-select');
       if (!sizeSelect) return;
 
       sizeSelect.innerHTML = `<option value="">Size</option>`;
+      if (colorSelect) colorSelect.innerHTML = `<option value="">Color</option>`;
+      
       if (!enteredSku) {
         basketSkuInput.style.borderColor = 'var(--color-border)';
         return;
@@ -942,6 +1000,16 @@ function setupOwnerEventListeners() {
             </option>
           `).join('');
         }
+
+        // Populate colors dropdown
+        if (colorSelect) {
+          const colorsList = product.colors ? product.colors.split(',').map(c => c.trim()).filter(Boolean) : [];
+          if (colorsList.length > 0) {
+            colorSelect.innerHTML += colorsList.map(c => `<option value="${c}">${c}</option>`).join('');
+          } else {
+            colorSelect.innerHTML += `<option value="No Color">No Color Option</option>`;
+          }
+        }
       } else {
         basketSkuInput.style.borderColor = 'var(--color-error)';
       }
@@ -953,6 +1021,8 @@ function setupOwnerEventListeners() {
       const enteredSku = basketSkuInput ? basketSkuInput.value.trim().toLowerCase() : '';
       const sizeSelect = document.getElementById('basket-size-select');
       const size = sizeSelect ? sizeSelect.value : '';
+      const colorSelect = document.getElementById('basket-color-select');
+      const color = colorSelect ? colorSelect.value : '';
       const qtyInput = document.getElementById('basket-qty-input');
       const qty = qtyInput ? parseInt(qtyInput.value, 10) : 0;
 
@@ -967,6 +1037,12 @@ function setupOwnerEventListeners() {
         return;
       }
 
+      const hasColors = product.colors && product.colors.trim().length > 0;
+      if (hasColors && !color) {
+        alert("Please select an available color variant.");
+        return;
+      }
+
       const stockRow = stockLevels.find(s => s.product_id === product.id && s.size === size);
       if (!stockRow) {
         alert("Product stock size record not found.");
@@ -974,7 +1050,7 @@ function setupOwnerEventListeners() {
       }
 
       // Verify stock level before adding
-      const existing = invoiceBasket.find(i => i.id === product.id && i.size === size);
+      const existing = invoiceBasket.find(i => i.id === product.id && i.size === size && i.color === color);
       const currentBasketQty = existing ? existing.qty : 0;
 
       if (currentBasketQty + qty > stockRow.quantity) {
@@ -989,6 +1065,7 @@ function setupOwnerEventListeners() {
           id: product.id,
           name: product.name,
           size: size,
+          color: color || '',
           qty: qty,
           price: product.sale_price || product.price,
           maxQty: stockRow.quantity
@@ -1001,6 +1078,7 @@ function setupOwnerEventListeners() {
         basketSkuInput.style.borderColor = 'var(--color-border)';
       }
       if (sizeSelect) sizeSelect.innerHTML = `<option value="">Size</option>`;
+      if (colorSelect) colorSelect.innerHTML = `<option value="">Color</option>`;
       if (qtyInput) qtyInput.value = 1;
       renderInvoiceBasket();
     });
@@ -1063,6 +1141,7 @@ function setupOwnerEventListeners() {
           id: item.id,
           name: item.name,
           size: item.size,
+          color: item.color || '',
           qty: item.qty,
           price: item.price
         }));
@@ -1168,6 +1247,7 @@ function setupOwnerEventListeners() {
       const sku = document.getElementById('edit-sku').value.trim();
       const name = document.getElementById('edit-name').value.trim();
       const desc = document.getElementById('edit-desc').value.trim();
+      const colors = document.getElementById('edit-colors').value.trim();
       const price = parseFloat(document.getElementById('edit-price').value);
       const salePriceInput = document.getElementById('edit-sale-price').value;
       const salePrice = salePriceInput ? parseFloat(salePriceInput) : null;
@@ -1200,7 +1280,8 @@ function setupOwnerEventListeners() {
             name: name,
             description: desc,
             price: price,
-            sale_price: salePrice
+            sale_price: salePrice,
+            colors: colors
           })
           .eq('id', productId);
 
@@ -1524,6 +1605,7 @@ function renderStockTable() {
       document.getElementById('edit-sku').value = product.sku || '';
       document.getElementById('edit-name').value = product.name;
       document.getElementById('edit-desc').value = product.description || '';
+      document.getElementById('edit-colors').value = product.colors || '';
       document.getElementById('edit-price').value = product.price;
       document.getElementById('edit-sale-price').value = product.sale_price || '';
 
@@ -1592,7 +1674,7 @@ function renderInvoiceBasket() {
   container.innerHTML = invoiceBasket.map((item, index) => `
     <div class="basket-item-row">
       <div>
-        <div class="basket-item-desc">${escapeHTML(item.name)} (${item.size})</div>
+        <div class="basket-item-desc">${escapeHTML(item.name)} (${item.size}${item.color ? ` | ${item.color}` : ''})</div>
         <div class="basket-item-pricing">${item.qty} x ₹${item.price}</div>
       </div>
       <div style="display:flex; align-items:center; gap:12px;">
@@ -1627,7 +1709,7 @@ function renderInvoiceReceipt(sale) {
     tbody.innerHTML = sale.items.map(item => `
       <tr>
         <td>${escapeHTML(item.name)}</td>
-        <td class="text-center">${item.size}</td>
+        <td class="text-center">${item.size}${item.color ? ` | ${item.color}` : ''}</td>
         <td class="text-center">${item.qty}</td>
         <td class="text-right">₹${item.price}</td>
         <td class="text-right">₹${item.price * item.qty}</td>

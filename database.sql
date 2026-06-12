@@ -137,3 +137,6 @@ USING (bucket_id = 'product-photos');
 
 -- Alter table statement for existing users to add SKU column without losing data
 ALTER TABLE products ADD COLUMN IF NOT EXISTS sku TEXT UNIQUE;
+
+-- Add colors column to products
+ALTER TABLE products ADD COLUMN IF NOT EXISTS colors TEXT;

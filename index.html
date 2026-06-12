@@ -293,6 +293,11 @@
                   <textarea id="stock-desc" placeholder="Details about cloth, colors, weaves..." rows="2"></textarea>
                 </div>
 
+                <div class="form-group">
+                  <label for="stock-colors">Available Colors</label>
+                  <input type="text" id="stock-colors" placeholder="e.g. Red, Pink, Peach, Green (comma separated)" />
+                </div>
+
                 <div class="form-row flex-row">
                   <div class="form-group flex-1">
                     <label for="stock-price">Original Price (₹) <span class="required">*</span></label>
@@ -406,16 +411,20 @@
                 <div class="form-group basket-group">
                   <label>Add Items to Invoice Basket</label>
                   
-                  <div class="basket-selector-row">
-                    <input type="text" id="basket-sku-input" placeholder="Enter SKU" class="form-select flex-2" style="font-size: 16px;" />
+                  <div class="basket-selector-row" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <input type="text" id="basket-sku-input" placeholder="Enter SKU" class="form-select" style="flex: 2; min-width: 120px; font-size: 16px;" />
                     
-                    <select id="basket-size-select" class="form-select flex-1">
+                    <select id="basket-size-select" class="form-select" style="flex: 1.2; min-width: 80px;">
                       <option value="">Size</option>
                     </select>
+
+                    <select id="basket-color-select" class="form-select" style="flex: 1.2; min-width: 80px;">
+                      <option value="">Color</option>
+                    </select>
                     
-                    <input type="number" id="basket-qty-input" placeholder="Qty" min="1" value="1" class="flex-1" />
+                    <input type="number" id="basket-qty-input" placeholder="Qty" min="1" value="1" class="form-select" style="flex: 1; min-width: 60px;" />
                     
-                    <button type="button" id="btn-add-to-basket" class="btn-secondary">Add</button>
+                    <button type="button" id="btn-add-to-basket" class="btn-secondary" style="flex: 1; min-width: 70px;">Add</button>
                   </div>
                   
                   <!-- Current Basket Items -->
@@ -551,6 +560,11 @@
           <div class="form-group">
             <label for="edit-desc">Description</label>
             <textarea id="edit-desc" placeholder="Details about cloth, colors, weaves..." rows="2"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-colors">Available Colors</label>
+            <input type="text" id="edit-colors" placeholder="e.g. Red, Pink, Peach, Green (comma separated)" />
           </div>
 
           <div class="form-row flex-row" style="gap: 12px; margin-bottom: 22px;">
