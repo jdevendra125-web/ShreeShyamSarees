@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS visitors (
 -- 2. Table for product details
 CREATE TABLE IF NOT EXISTS products (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  sku TEXT UNIQUE,
   name TEXT NOT NULL,
   description TEXT,
   price NUMERIC NOT NULL,
@@ -133,3 +134,6 @@ DROP POLICY IF EXISTS "Allow public delete from product-photos" ON storage.objec
 CREATE POLICY "Allow public delete from product-photos" 
 ON storage.objects FOR DELETE 
 USING (bucket_id = 'product-photos');
+
+-- Alter table statement for existing users to add SKU column without losing data
+ALTER TABLE products ADD COLUMN IF NOT EXISTS sku TEXT UNIQUE;

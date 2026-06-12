@@ -793,6 +793,7 @@ function setupOwnerEventListeners() {
         return;
       }
 
+      const sku = document.getElementById('stock-sku').value.trim();
       const name = document.getElementById('stock-name').value.trim();
       const desc = document.getElementById('stock-desc').value.trim();
       const price = parseFloat(document.getElementById('stock-price').value);
@@ -841,6 +842,7 @@ function setupOwnerEventListeners() {
         const { data: pData, error: pError } = await supabase
           .from('products')
           .insert([{
+            sku: sku,
             name: name,
             description: desc,
             price: price,
@@ -1355,7 +1357,8 @@ function renderStockTable() {
             ${product.photo_url ? `<img src="${product.photo_url}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;"/>` : ''}
             <div>
               <div style="font-weight:600;">${escapeHTML(product.name)}</div>
-              <div style="font-size:0.75rem; color:var(--color-text-muted);">${escapeHTML(product.description || '')}</div>
+              <div style="font-size:0.78rem; color:var(--color-primary); font-weight:600; margin-top:2px;">SKU: ${escapeHTML(product.sku || 'N/A')}</div>
+              <div style="font-size:0.75rem; color:var(--color-text-muted); margin-top:2px;">${escapeHTML(product.description || '')}</div>
             </div>
           </div>
         </td>
