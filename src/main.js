@@ -610,6 +610,10 @@ async function sendEmailJSNotification(order, name, phone, address, items, total
 
   // Build items description
   const itemsText = items.map(i => `- ${i.name} (Size: ${i.size}${i.color ? `, Color: ${i.color}` : ''}) x ${i.qty} @ ₹${i.price}`).join('\n');
+  const orderIdShort = order.id.substring(0, 8).toUpperCase();
+  const cleanPhone = cleanPhoneNumber(phone);
+  const confirmMsg = `Hello ${name}, thank you for your order #${orderIdShort} on Shree Shyam Sarees. We have received it and would like to confirm your details.`;
+  const whatsappLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(confirmMsg)}`;
 
   const templateParams = {
     to_email: recipient,
@@ -618,7 +622,8 @@ async function sendEmailJSNotification(order, name, phone, address, items, total
     customer_address: address,
     order_details: itemsText,
     total_amount: `₹${total}`,
-    order_id: order.id.substring(0, 8).toUpperCase()
+    order_id: orderIdShort,
+    whatsapp_link: whatsappLink
   };
 
   try {
