@@ -301,9 +301,11 @@
                 </div>
 
                 <div class="form-group">
-                  <label for="stock-photo">Photo URL</label>
-                  <input type="url" id="stock-photo" placeholder="https://image-link.com/photo.jpg" />
-                  <small class="input-hint">Paste any public image URL (or leave blank for default logo)</small>
+                  <label for="stock-photo-file">Upload Product Photo</label>
+                  <div class="file-input-wrapper">
+                    <input type="file" id="stock-photo-file" accept="image/*" class="form-control-file" />
+                  </div>
+                  <small class="input-hint">Select a photo from your device to upload to Supabase</small>
                 </div>
 
                 <div class="form-group">

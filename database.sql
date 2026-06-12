@@ -84,3 +84,22 @@ CREATE POLICY "Allow public update orders" ON orders FOR UPDATE USING (true);
 -- Sales Policies
 CREATE POLICY "Allow public select sales" ON sales FOR SELECT USING (true);
 CREATE POLICY "Allow public insert sales" ON sales FOR INSERT WITH CHECK (true);
+
+-- 6. Setup Supabase Storage for Saree Photos
+-- Create the bucket if it doesn't exist
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('product-photos', 'product-photos', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Policies to allow anyone at the stall to upload and view photos
+CREATE POLICY "Allow public select from product-photos" 
+ON storage.objects FOR SELECT 
+USING (bucket_id = 'product-photos');
+
+CREATE POLICY "Allow public upload to product-photos" 
+ON storage.objects FOR INSERT 
+WITH CHECK (bucket_id = 'product-photos');
+
+CREATE POLICY "Allow public delete from product-photos" 
+ON storage.objects FOR DELETE 
+USING (bucket_id = 'product-photos');

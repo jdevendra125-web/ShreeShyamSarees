@@ -798,7 +798,7 @@ function setupOwnerEventListeners() {
       const price = parseFloat(document.getElementById('stock-price').value);
       const salePriceInput = document.getElementById('stock-sale-price').value;
       const salePrice = salePriceInput ? parseFloat(salePriceInput) : null;
-      const photoUrl = document.getElementById('stock-photo').value.trim();
+      const photoFile = document.getElementById('stock-photo-file').files[0];
 
       const sizes = [
         { name: 'Free Size', qty: parseInt(document.getElementById('qty-freesize').value) || 0 },
@@ -815,6 +815,28 @@ function setupOwnerEventListeners() {
       if (submitBtn) submitBtn.disabled = true;
 
       try {
+        let photoUrl = null;
+
+        // Upload photo to Supabase storage if selected
+        if (photoFile) {
+          const fileExt = photoFile.name.split('.').pop();
+          const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 10)}.${fileExt}`;
+          
+          const { data: uploadData, error: uploadError } = await supabase
+            .storage
+            .from('product-photos')
+            .upload(fileName, photoFile);
+
+          if (uploadError) throw uploadError;
+
+          const { data: publicUrlData } = supabase
+            .storage
+            .from('product-photos')
+            .getPublicUrl(fileName);
+
+          photoUrl = publicUrlData.publicUrl;
+        }
+
         // 1. Insert product details
         const { data: pData, error: pError } = await supabase
           .from('products')
@@ -823,7 +845,7 @@ function setupOwnerEventListeners() {
             description: desc,
             price: price,
             sale_price: salePrice,
-            photo_url: photoUrl || null
+            photo_url: photoUrl
           }])
           .select();
 

@@ -744,7 +744,7 @@ body {
   gap: 32px;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
   .tab-content-grid {
     grid-template-columns: 1fr;
     gap: 24px;
@@ -919,6 +919,34 @@ body {
   border-bottom-color: var(--color-accent-dark);
 }
 
+.file-input-wrapper input[type="file"] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  font-family: var(--font-ui);
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.file-input-wrapper input[type="file"]::file-selector-button {
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 12px;
+  transition: var(--transition);
+}
+
+.file-input-wrapper input[type="file"]::file-selector-button:hover {
+  background-color: var(--color-primary-light);
+}
+
 /* --------------------------------------------- */
 /*             STOCK & VISITORS TABLES            */
 /* --------------------------------------------- */
@@ -930,17 +958,7 @@ body {
 }
 
 .dashboard-grid {
-  display: grid;
-  grid-template-columns: 420px 1fr;
-  gap: 32px;
   margin-top: 32px;
-}
-
-@media (max-width: 1024px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-    gap: 24px;
-  }
 }
 
 .card {
