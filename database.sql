@@ -140,3 +140,19 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS sku TEXT UNIQUE;
 
 -- Add colors column to products
 ALTER TABLE products ADD COLUMN IF NOT EXISTS colors TEXT;
+
+-- 7. Table for storing configuration settings (e.g., EmailJS credentials)
+CREATE TABLE IF NOT EXISTS store_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT
+);
+
+-- Enable RLS for settings
+ALTER TABLE store_settings ENABLE ROW LEVEL SECURITY;
+
+-- Settings Policies (allow public select and upsert for easy client-side configuration)
+DROP POLICY IF EXISTS "Allow public select settings" ON store_settings;
+CREATE POLICY "Allow public select settings" ON store_settings FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow public upsert settings" ON store_settings;
+CREATE POLICY "Allow public upsert settings" ON store_settings FOR ALL USING (true);

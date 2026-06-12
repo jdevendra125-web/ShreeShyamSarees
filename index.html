@@ -71,6 +71,36 @@
             <p>Select sizes and add items to your cart to order</p>
           </div>
 
+          <!-- Storefront Filter Bar -->
+          <div class="catalog-filter-bar">
+            <div class="filter-group search-filter">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="filter-search-icon">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="storefront-search" placeholder="Search by name, SKU..." />
+            </div>
+            
+            <div class="filter-group">
+              <select id="storefront-filter-size">
+                <option value="">All Sizes</option>
+                <option value="Free Size">Free Size</option>
+                <option value="S">Size S</option>
+                <option value="M">Size M</option>
+                <option value="L">Size L</option>
+                <option value="XL">Size XL</option>
+                <option value="XXL">Size XXL</option>
+                <option value="XXXL">Size XXXL</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <select id="storefront-filter-color">
+                <option value="">All Colors</option>
+              </select>
+            </div>
+          </div>
+
           <div id="catalog-grid" class="catalog-grid">
             <!-- Dynamic product cards injected here -->
             <div class="catalog-empty">
@@ -728,6 +758,33 @@
           </button>
         </div>
       </div>
+    </div>
+
+    <!-- Order Success Modal (Customer storefront) -->
+    <div id="modal-order-success" class="modal-overlay hidden">
+      <div class="modal-card text-center" style="max-width: 450px; padding: 30px;">
+        <div style="margin-bottom: 20px;">
+          <div class="success-checkmark-circle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#25d366" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="checkmark-icon">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+        </div>
+        <h3 style="font-family: var(--font-title); font-size: 1.6rem; color: var(--color-primary); margin-bottom: 10px;">Order Placed Successfully!</h3>
+        <p style="font-size: 0.95rem; color: var(--color-text-muted); margin-bottom: 20px; line-height: 1.5;">
+          Thank you <strong id="success-cust-name"></strong>! Your order reference is <strong id="success-order-id" style="color: var(--color-primary);"></strong>.<br>
+          We have received your order details. We will contact you on WhatsApp shortly to confirm shipping.
+        </p>
+        <div style="margin-top: 24px;">
+          <button id="btn-close-success" class="btn-primary" style="width: 100%;">Continue Shopping</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification Overlay -->
+    <div id="toast-notification" class="toast-notification">
+      <span class="toast-icon">🌸</span>
+      <span id="toast-message">Added to cart!</span>
     </div>
 
     <!-- Main JS script -->

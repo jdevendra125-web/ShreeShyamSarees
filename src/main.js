@@ -94,11 +94,48 @@ async function initSupabase() {
   try {
     supabase = createClient(url.trim(), key.trim());
     updateConnectionStatus(true, "Connected");
+    await loadEmailJSSettings();
     return true;
   } catch (error) {
     console.error("Failed to initialize Supabase:", error);
     updateConnectionStatus(false, "Connection Failed");
     return false;
+  }
+}
+
+async function loadEmailJSSettings() {
+  if (!supabase) return;
+  try {
+    const { data: dbSettings, error } = await supabase
+      .from('store_settings')
+      .select('*');
+    
+    if (error) {
+      console.warn("Could not load settings from database. This is normal if the store_settings table is not created yet.", error.message);
+      return;
+    }
+
+    if (dbSettings && dbSettings.length > 0) {
+      dbSettings.forEach(s => {
+        if (s.key === 'emailjs_public' && s.value) localStorage.setItem('emailjs_public', s.value);
+        if (s.key === 'emailjs_service' && s.value) localStorage.setItem('emailjs_service', s.value);
+        if (s.key === 'emailjs_template' && s.value) localStorage.setItem('emailjs_template', s.value);
+        if (s.key === 'emailjs_recipient' && s.value) localStorage.setItem('emailjs_recipient', s.value);
+      });
+      
+      // Update form fields if we are in owner view
+      const inputEmailJSPublic = document.getElementById('settings-emailjs-public');
+      const inputEmailJSService = document.getElementById('settings-emailjs-service');
+      const inputEmailJSTemplate = document.getElementById('settings-emailjs-template');
+      const inputEmailJSRecipient = document.getElementById('settings-emailjs-recipient');
+
+      if (inputEmailJSPublic) inputEmailJSPublic.value = localStorage.getItem('emailjs_public') || '';
+      if (inputEmailJSService) inputEmailJSService.value = localStorage.getItem('emailjs_service') || '';
+      if (inputEmailJSTemplate) inputEmailJSTemplate.value = localStorage.getItem('emailjs_template') || '';
+      if (inputEmailJSRecipient) inputEmailJSRecipient.value = localStorage.getItem('emailjs_recipient') || 'shreeshyamsarees@gmail.com';
+    }
+  } catch (e) {
+    console.error("Error fetching store_settings:", e);
   }
 }
 
@@ -138,7 +175,9 @@ async function loadCatalogProducts() {
     if (sError) throw sError;
     stockLevels = dbStock || [];
 
-    renderCatalog();
+    // Initialize and bind filters
+    populateStorefrontFilters();
+    filterStorefrontProducts();
   } catch (e) {
     console.error("Error loading storefront catalog:", e);
     if (catalogGrid) {
@@ -151,20 +190,90 @@ async function loadCatalogProducts() {
   }
 }
 
-function renderCatalog() {
+function populateStorefrontFilters() {
+  const selectColor = document.getElementById('storefront-filter-color');
+  if (!selectColor) return;
+
+  const colorsSet = new Set();
+  products.forEach(p => {
+    if (p.colors) {
+      p.colors.split(',').forEach(c => {
+        const trimmed = c.trim();
+        if (trimmed) colorsSet.add(trimmed);
+      });
+    }
+  });
+
+  const currentSelected = selectColor.value;
+  selectColor.innerHTML = '<option value="">All Colors</option>' + 
+    Array.from(colorsSet).sort().map(color => `
+      <option value="${color}">${color}</option>
+    `).join('');
+  selectColor.value = currentSelected;
+}
+
+function setupStorefrontFilterListeners() {
+  const searchInput = document.getElementById('storefront-search');
+  const selectSize = document.getElementById('storefront-filter-size');
+  const selectColor = document.getElementById('storefront-filter-color');
+
+  if (searchInput) searchInput.addEventListener('input', filterStorefrontProducts);
+  if (selectSize) selectSize.addEventListener('change', filterStorefrontProducts);
+  if (selectColor) selectColor.addEventListener('change', filterStorefrontProducts);
+}
+
+function filterStorefrontProducts() {
+  const searchVal = (document.getElementById('storefront-search')?.value || '').toLowerCase().trim();
+  const sizeVal = document.getElementById('storefront-filter-size')?.value || '';
+  const colorVal = document.getElementById('storefront-filter-color')?.value || '';
+
+  const filtered = products.filter(product => {
+    // 1. Search filter
+    if (searchVal) {
+      const nameMatch = (product.name || '').toLowerCase().includes(searchVal);
+      const skuMatch = (product.sku || '').toLowerCase().includes(searchVal);
+      const descMatch = (product.description || '').toLowerCase().includes(searchVal);
+      if (!nameMatch && !skuMatch && !descMatch) return false;
+    }
+
+    // 2. Size filter
+    if (sizeVal) {
+      const hasSizeStock = stockLevels.some(s => 
+        s.product_id === product.id && 
+        s.size === sizeVal && 
+        s.quantity > 0
+      );
+      if (!hasSizeStock) return false;
+    }
+
+    // 3. Color filter
+    if (colorVal) {
+      const productColors = product.colors ? product.colors.split(',').map(c => c.trim()) : [];
+      if (!productColors.includes(colorVal)) return false;
+    }
+
+    return true;
+  });
+
+  renderCatalog(filtered);
+}
+
+function renderCatalog(customProducts = null) {
   const catalogGrid = document.getElementById('catalog-grid');
   if (!catalogGrid) return;
 
-  if (products.length === 0) {
+  const items = customProducts !== null ? customProducts : products;
+
+  if (items.length === 0) {
     catalogGrid.innerHTML = `
       <div class="catalog-empty">
-        <p>No saree collections added yet. Please check back later!</p>
+        <p>No saree collections found matching your search.</p>
       </div>
     `;
     return;
   }
 
-  catalogGrid.innerHTML = products.map(product => {
+  catalogGrid.innerHTML = items.map(product => {
     // Get stock variants for this product
     const variants = stockLevels.filter(s => s.product_id === product.id && s.quantity > 0);
     const totalQty = variants.reduce((acc, curr) => acc + curr.quantity, 0);
@@ -348,7 +457,23 @@ function addToCart(productId, size, maxQty, color) {
 
   updateCartBadge();
   renderCartDrawer();
-  openCartDrawer();
+  
+  // Show toast notification instead of sliding open the cart automatically
+  showToastNotification(`Added "${product.name}" to cart!`);
+}
+
+function showToastNotification(message) {
+  const toast = document.getElementById('toast-notification');
+  const toastMsg = document.getElementById('toast-message');
+  if (!toast || !toastMsg) return;
+
+  toastMsg.textContent = message;
+  toast.classList.add('show');
+
+  // Hide toast after 2.5s
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 2500);
 }
 
 function updateCartBadge() {
@@ -476,6 +601,16 @@ function setupCustomerEventListeners() {
   const btnCloseCart = document.getElementById('btn-close-cart');
   const cartDrawerOverlay = document.querySelector('.cart-drawer-overlay');
   const formCheckout = document.getElementById('form-checkout');
+  const btnCloseSuccess = document.getElementById('btn-close-success');
+
+  // Bind storefront filter input/change listeners
+  setupStorefrontFilterListeners();
+
+  if (btnCloseSuccess) {
+    btnCloseSuccess.addEventListener('click', () => {
+      document.getElementById('modal-order-success').classList.add('hidden');
+    });
+  }
 
   if (btnCartToggle) {
     btnCartToggle.addEventListener('click', () => {
@@ -569,12 +704,20 @@ function setupCustomerEventListeners() {
 
         if (orderError) throw orderError;
         const newOrder = orderData[0];
+        const orderIdShort = newOrder.id.substring(0, 8).toUpperCase();
 
         // 3. Trigger EmailJS Notification
         await sendEmailJSNotification(newOrder, name, phone, address, orderItems, totalAmount);
 
         // 4. Success handling
-        alert(`Thank you ${name}! Your order has been placed successfully. Size-wise stock has been updated.`);
+        const modalSuccess = document.getElementById('modal-order-success');
+        if (modalSuccess) {
+          document.getElementById('success-cust-name').textContent = name;
+          document.getElementById('success-order-id').textContent = `#${orderIdShort}`;
+          modalSuccess.classList.remove('hidden');
+        } else {
+          alert(`Thank you ${name}! Your order has been placed successfully. Order ID: #${orderIdShort}`);
+        }
         
         // Reset cart
         cart = [];
