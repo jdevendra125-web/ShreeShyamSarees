@@ -826,7 +826,9 @@ function setupOwnerEventListeners() {
           const { data: uploadData, error: uploadError } = await supabase
             .storage
             .from('product-photos')
-            .upload(fileName, photoFile);
+            .upload(fileName, photoFile, {
+              contentType: photoFile.type
+            });
 
           if (uploadError) throw uploadError;
 
@@ -905,49 +907,70 @@ function setupOwnerEventListeners() {
   // --- SALES INVOICING DESK ---
   const formSale = document.getElementById('form-sale');
   const btnAddToBasket = document.getElementById('btn-add-to-basket');
-  const basketProductSelect = document.getElementById('basket-product-select');
+  const basketSkuInput = document.getElementById('basket-sku-input');
   const btnCloseInvoice = document.getElementById('btn-close-invoice');
   const btnPrintReceipt = document.getElementById('btn-print-receipt');
 
-  // Load variant options when product is chosen in select
-  if (basketProductSelect) {
-    basketProductSelect.addEventListener('change', () => {
-      const productId = basketProductSelect.value;
+  // Load variant options when SKU is entered
+  if (basketSkuInput) {
+    basketSkuInput.addEventListener('input', () => {
+      const enteredSku = basketSkuInput.value.trim().toLowerCase();
       const sizeSelect = document.getElementById('basket-size-select');
       if (!sizeSelect) return;
 
       sizeSelect.innerHTML = `<option value="">Size</option>`;
-      if (!productId) return;
+      if (!enteredSku) {
+        basketSkuInput.style.borderColor = 'var(--color-border)';
+        return;
+      }
 
-      const variants = stockLevels.filter(s => s.product_id === productId && s.quantity > 0);
-      sizeSelect.innerHTML += variants.map(v => `
-        <option value="${v.size}">
-          ${v.size} (Qty: ${v.quantity})
-        </option>
-      `).join('');
+      const product = products.find(p => p.sku && p.sku.trim().toLowerCase() === enteredSku);
+      if (product) {
+        basketSkuInput.style.borderColor = 'var(--color-success)';
+        const variants = stockLevels.filter(s => s.product_id === product.id && s.quantity > 0);
+        
+        if (variants.length === 0) {
+          sizeSelect.innerHTML = `<option value="">Out of Stock</option>`;
+        } else {
+          sizeSelect.innerHTML += variants.map(v => `
+            <option value="${v.size}">
+              ${v.size} (Qty: ${v.quantity})
+            </option>
+          `).join('');
+        }
+      } else {
+        basketSkuInput.style.borderColor = 'var(--color-error)';
+      }
     });
   }
 
   if (btnAddToBasket) {
     btnAddToBasket.addEventListener('click', () => {
-      const productId = basketProductSelect.value;
+      const enteredSku = basketSkuInput ? basketSkuInput.value.trim().toLowerCase() : '';
       const sizeSelect = document.getElementById('basket-size-select');
       const size = sizeSelect ? sizeSelect.value : '';
       const qtyInput = document.getElementById('basket-qty-input');
       const qty = qtyInput ? parseInt(qtyInput.value, 10) : 0;
 
-      if (!productId || !size || qty <= 0) {
-        alert("Please choose a product, select a size, and enter a valid quantity.");
+      if (!enteredSku || !size || qty <= 0) {
+        alert("Please enter a valid SKU, select a size, and enter a valid quantity.");
         return;
       }
 
-      const product = products.find(p => p.id === productId);
-      const stockRow = stockLevels.find(s => s.product_id === productId && s.size === size);
+      const product = products.find(p => p.sku && p.sku.trim().toLowerCase() === enteredSku);
+      if (!product) {
+        alert("Product with this SKU not found.");
+        return;
+      }
 
-      if (!product || !stockRow) return;
+      const stockRow = stockLevels.find(s => s.product_id === product.id && s.size === size);
+      if (!stockRow) {
+        alert("Product stock size record not found.");
+        return;
+      }
 
       // Verify stock level before adding
-      const existing = invoiceBasket.find(i => i.id === productId && i.size === size);
+      const existing = invoiceBasket.find(i => i.id === product.id && i.size === size);
       const currentBasketQty = existing ? existing.qty : 0;
 
       if (currentBasketQty + qty > stockRow.quantity) {
@@ -968,7 +991,12 @@ function setupOwnerEventListeners() {
         });
       }
 
-      // Reset select options and render basket
+      // Reset SKU input, select options and render basket
+      if (basketSkuInput) {
+        basketSkuInput.value = '';
+        basketSkuInput.style.borderColor = 'var(--color-border)';
+      }
+      if (sizeSelect) sizeSelect.innerHTML = `<option value="">Size</option>`;
       if (qtyInput) qtyInput.value = 1;
       renderInvoiceBasket();
     });
