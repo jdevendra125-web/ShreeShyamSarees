@@ -806,7 +806,9 @@ function setupOwnerEventListeners() {
         { name: 'S', qty: parseInt(document.getElementById('qty-s').value) || 0 },
         { name: 'M', qty: parseInt(document.getElementById('qty-m').value) || 0 },
         { name: 'L', qty: parseInt(document.getElementById('qty-l').value) || 0 },
-        { name: 'XL', qty: parseInt(document.getElementById('qty-xl').value) || 0 }
+        { name: 'XL', qty: parseInt(document.getElementById('qty-xl').value) || 0 },
+        { name: 'XXL', qty: parseInt(document.getElementById('qty-xxl').value) || 0 },
+        { name: 'XXXL', qty: parseInt(document.getElementById('qty-xxxl').value) || 0 }
       ];
 
       const spinner = document.getElementById('stock-spinner');
@@ -881,6 +883,8 @@ function setupOwnerEventListeners() {
         document.getElementById('qty-m').value = "0";
         document.getElementById('qty-l').value = "0";
         document.getElementById('qty-xl').value = "0";
+        document.getElementById('qty-xxl').value = "0";
+        document.getElementById('qty-xxxl').value = "0";
 
         // Refresh stock table & rebuild invoice selects
         await loadStockInventory();
