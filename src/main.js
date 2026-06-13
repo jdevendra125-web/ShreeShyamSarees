@@ -7,6 +7,12 @@ let visitors = [];
 let products = [];
 let stockLevels = []; // Array of {product_id, size, quantity}
 let lastRegisteredVisitor = null;
+let emailjsSettings = {
+  publicKey: '',
+  serviceId: '',
+  templateId: '',
+  recipient: 'shreeshyamsarees@gmail.com'
+};
 
 // Cart State (Customer storefront)
 let cart = [];
@@ -75,6 +81,12 @@ function loadSettings() {
   if (inputEmailJSService) inputEmailJSService.value = localStorage.getItem('emailjs_service') || '';
   if (inputEmailJSTemplate) inputEmailJSTemplate.value = localStorage.getItem('emailjs_template') || '';
   if (inputEmailJSRecipient) inputEmailJSRecipient.value = localStorage.getItem('emailjs_recipient') || 'shreeshyamsarees@gmail.com';
+
+  // Populate global memory state
+  emailjsSettings.publicKey = localStorage.getItem('emailjs_public') || '';
+  emailjsSettings.serviceId = localStorage.getItem('emailjs_service') || '';
+  emailjsSettings.templateId = localStorage.getItem('emailjs_template') || '';
+  emailjsSettings.recipient = localStorage.getItem('emailjs_recipient') || 'shreeshyamsarees@gmail.com';
 }
 
 function saveSettings(url, key) {
@@ -117,10 +129,22 @@ async function loadEmailJSSettings() {
 
     if (dbSettings && dbSettings.length > 0) {
       dbSettings.forEach(s => {
-        if (s.key === 'emailjs_public' && s.value) localStorage.setItem('emailjs_public', s.value);
-        if (s.key === 'emailjs_service' && s.value) localStorage.setItem('emailjs_service', s.value);
-        if (s.key === 'emailjs_template' && s.value) localStorage.setItem('emailjs_template', s.value);
-        if (s.key === 'emailjs_recipient' && s.value) localStorage.setItem('emailjs_recipient', s.value);
+        if (s.key === 'emailjs_public' && s.value) {
+          localStorage.setItem('emailjs_public', s.value);
+          emailjsSettings.publicKey = s.value;
+        }
+        if (s.key === 'emailjs_service' && s.value) {
+          localStorage.setItem('emailjs_service', s.value);
+          emailjsSettings.serviceId = s.value;
+        }
+        if (s.key === 'emailjs_template' && s.value) {
+          localStorage.setItem('emailjs_template', s.value);
+          emailjsSettings.templateId = s.value;
+        }
+        if (s.key === 'emailjs_recipient' && s.value) {
+          localStorage.setItem('emailjs_recipient', s.value);
+          emailjsSettings.recipient = s.value;
+        }
       });
       
       // Update form fields if we are in owner view
@@ -136,6 +160,93 @@ async function loadEmailJSSettings() {
     }
   } catch (e) {
     console.error("Error fetching store_settings:", e);
+  }
+}
+
+async function saveEmailJSSettingsToDB() {
+  if (!supabase) return;
+  
+  const pubKey = (document.getElementById('settings-emailjs-public')?.value || '').trim();
+  const serviceId = (document.getElementById('settings-emailjs-service')?.value || '').trim();
+  const templateId = (document.getElementById('settings-emailjs-template')?.value || '').trim();
+  const recipient = (document.getElementById('settings-emailjs-recipient')?.value || 'shreeshyamsarees@gmail.com').trim();
+
+  // Populate global memory state
+  emailjsSettings.publicKey = pubKey;
+  emailjsSettings.serviceId = serviceId;
+  emailjsSettings.templateId = templateId;
+  emailjsSettings.recipient = recipient;
+
+  const settings = [
+    { key: 'emailjs_public', value: pubKey },
+    { key: 'emailjs_service', value: serviceId },
+    { key: 'emailjs_template', value: templateId },
+    { key: 'emailjs_recipient', value: recipient }
+  ];
+
+  try {
+    for (const item of settings) {
+      const { error } = await supabase
+        .from('store_settings')
+        .upsert(item, { onConflict: 'key' });
+      if (error) {
+        console.error(`Error saving settings key ${item.key} to DB:`, error);
+      }
+    }
+    console.log("EmailJS credentials saved to database successfully.");
+  } catch (err) {
+    console.error("Error upserting store_settings to DB:", err);
+  }
+}
+
+async function syncLocalSettingsToDB() {
+  if (!supabase) return;
+  try {
+    const pubKey = localStorage.getItem('emailjs_public') || '';
+    const serviceId = localStorage.getItem('emailjs_service') || '';
+    const templateId = localStorage.getItem('emailjs_template') || '';
+    const recipient = localStorage.getItem('emailjs_recipient') || 'shreeshyamsarees@gmail.com';
+
+    if (pubKey && serviceId && templateId) {
+      console.log("Checking if local settings need to be synced to DB...");
+      const { data, error } = await supabase
+        .from('store_settings')
+        .select('*');
+      
+      if (!error) {
+        const dbMap = {};
+        if (data) {
+          data.forEach(item => { dbMap[item.key] = item.value; });
+        }
+        
+        const hasDiff = 
+          dbMap['emailjs_public'] !== pubKey ||
+          dbMap['emailjs_service'] !== serviceId ||
+          dbMap['emailjs_template'] !== templateId ||
+          dbMap['emailjs_recipient'] !== recipient;
+        
+        if (hasDiff) {
+          console.log("Syncing settings to DB because they are missing or different...");
+          const settings = [
+            { key: 'emailjs_public', value: pubKey },
+            { key: 'emailjs_service', value: serviceId },
+            { key: 'emailjs_template', value: templateId },
+            { key: 'emailjs_recipient', value: recipient }
+          ];
+
+          for (const item of settings) {
+            await supabase
+              .from('store_settings')
+              .upsert(item, { onConflict: 'key' });
+          }
+          console.log("Local settings successfully synced to Supabase database.");
+        } else {
+          console.log("Settings in DB are already up to date.");
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Error auto-syncing settings to DB:", err);
   }
 }
 
@@ -707,16 +818,33 @@ function setupCustomerEventListeners() {
         const orderIdShort = newOrder.id.substring(0, 8).toUpperCase();
 
         // 3. Trigger EmailJS Notification
-        await sendEmailJSNotification(newOrder, name, phone, address, orderItems, totalAmount);
+        const emailResult = await sendEmailJSNotification(newOrder, name, phone, address, orderItems, totalAmount);
 
         // 4. Success handling
         const modalSuccess = document.getElementById('modal-order-success');
         if (modalSuccess) {
           document.getElementById('success-cust-name').textContent = name;
           document.getElementById('success-order-id').textContent = `#${orderIdShort}`;
+          
+          const emailStatusEl = document.getElementById('success-email-status');
+          if (emailStatusEl) {
+            if (emailResult && emailResult.success) {
+              emailStatusEl.style.backgroundColor = 'rgba(37, 211, 102, 0.15)'; // light green tint
+              emailStatusEl.style.color = '#059669';
+              emailStatusEl.innerHTML = '✅ Email notification sent successfully to owner!';
+            } else {
+              emailStatusEl.style.backgroundColor = 'rgba(239, 68, 68, 0.15)'; // light red tint
+              emailStatusEl.style.color = '#dc2626';
+              emailStatusEl.innerHTML = `❌ Email notification failed: ${escapeHTML(emailResult ? emailResult.error : 'Unknown error')}`;
+            }
+          }
           modalSuccess.classList.remove('hidden');
         } else {
-          alert(`Thank you ${name}! Your order has been placed successfully. Order ID: #${orderIdShort}`);
+          if (emailResult && !emailResult.success) {
+            alert(`Thank you ${name}! Your order has been placed successfully. Order ID: #${orderIdShort}\n(Warning: Email notification failed: ${emailResult.error})`);
+          } else {
+            alert(`Thank you ${name}! Your order has been placed successfully. Order ID: #${orderIdShort}`);
+          }
         }
         
         // Reset cart
@@ -741,14 +869,14 @@ function setupCustomerEventListeners() {
 }
 
 async function sendEmailJSNotification(order, name, phone, address, items, total) {
-  const serviceId = localStorage.getItem('emailjs_service');
-  const templateId = localStorage.getItem('emailjs_template');
-  const publicKey = localStorage.getItem('emailjs_public');
-  const recipient = localStorage.getItem('emailjs_recipient') || 'shreeshyamsarees@gmail.com';
+  const serviceId = emailjsSettings.serviceId || localStorage.getItem('emailjs_service');
+  const templateId = emailjsSettings.templateId || localStorage.getItem('emailjs_template');
+  const publicKey = emailjsSettings.publicKey || localStorage.getItem('emailjs_public');
+  const recipient = emailjsSettings.recipient || localStorage.getItem('emailjs_recipient') || 'shreeshyamsarees@gmail.com';
 
   if (!serviceId || !templateId || !publicKey) {
     console.warn("EmailJS notification skipped: credentials are not configured in settings.");
-    return;
+    return { success: false, error: "EmailJS credentials are not configured in the store settings." };
   }
 
   // Build items description
@@ -770,11 +898,17 @@ async function sendEmailJSNotification(order, name, phone, address, items, total
   };
 
   try {
-    emailjs.init({ publicKey: publicKey });
-    const response = await emailjs.send(serviceId, templateId, templateParams);
+    const lib = window.emailjs || (typeof emailjs !== 'undefined' ? emailjs : null);
+    if (!lib) {
+      throw new Error("EmailJS library is not loaded on this page.");
+    }
+    lib.init({ publicKey: publicKey });
+    const response = await lib.send(serviceId, templateId, templateParams);
     console.log("EmailJS order notification sent successfully!", response);
+    return { success: true };
   } catch (err) {
     console.error("EmailJS notification failed:", err);
+    return { success: false, error: err.message || String(err) };
   }
 }
 
@@ -785,6 +919,9 @@ async function sendEmailJSNotification(order, name, phone, address, items, total
 async function initOwnerPortal() {
   setupOwnerEventListeners();
   
+  // Auto-sync EmailJS settings from owner's localStorage to Supabase DB
+  await syncLocalSettingsToDB();
+
   // Load initial data for tabs
   await fetchVisitors();
   await loadStockInventory();
@@ -849,6 +986,7 @@ function setupOwnerEventListeners() {
       saveSettings(url, key);
       const success = await initSupabase();
       if (success) {
+        await saveEmailJSSettingsToDB();
         alert("Settings saved successfully!");
         document.getElementById('modal-settings').classList.add('hidden');
         // Refresh views
@@ -1503,6 +1641,48 @@ function setupOwnerEventListeners() {
     });
   }
 
+  // Event delegation for Online Orders Cancel & Delete Buttons
+  const historyTbody = document.getElementById('history-tbody');
+  if (historyTbody) {
+    historyTbody.addEventListener('click', async (e) => {
+      const btnCancel = e.target.closest('.btn-table-cancel');
+      if (btnCancel) {
+        const orderId = btnCancel.getAttribute('data-order-id');
+        if (orderId) {
+          btnCancel.disabled = true;
+          const originalText = btnCancel.textContent;
+          btnCancel.textContent = "Cancelling...";
+          try {
+            await cancelOrder(orderId);
+          } finally {
+            if (btnCancel) {
+              btnCancel.disabled = false;
+              btnCancel.textContent = originalText;
+            }
+          }
+        }
+      }
+
+      const btnDelete = e.target.closest('.btn-table-delete-order');
+      if (btnDelete) {
+        const orderId = btnDelete.getAttribute('data-order-id');
+        if (orderId) {
+          btnDelete.disabled = true;
+          const originalText = btnDelete.textContent;
+          btnDelete.textContent = "Deleting...";
+          try {
+            await deleteOrder(orderId);
+          } finally {
+            if (btnDelete) {
+              btnDelete.disabled = false;
+              btnDelete.textContent = originalText;
+            }
+          }
+        }
+      }
+    });
+  }
+
   // Close modals on overlay clicks
   window.addEventListener('click', (e) => {
     const modalInvoice = document.getElementById('modal-invoice');
@@ -1970,6 +2150,19 @@ async function loadHistoryRecords() {
         const dateStr = formatDate(order.created_at);
         const itemsStr = order.items.map(i => `${escapeHTML(i.name)} (${i.size}) x ${i.qty}`).join(', ');
 
+        let statusClass = 'badge-redirected'; // green
+        if (order.status === 'pending') {
+          statusClass = 'badge-pending'; // amber
+        } else if (order.status === 'cancelled') {
+          statusClass = 'badge-cancelled'; // red
+        }
+
+        const showCancelButton = order.status === 'pending';
+        const cancelButtonHTML = showCancelButton 
+          ? `<br/><button class="btn-table-cancel" data-order-id="${order.id}">Cancel Order</button>` 
+          : '';
+        const deleteButtonHTML = `<br/><button class="btn-table-delete-order" data-order-id="${order.id}">Delete Order</button>`;
+
         return `
           <tr>
             <td data-label="Customer Info">
@@ -1981,10 +2174,12 @@ async function loadHistoryRecords() {
             <td data-label="Total Amount" style="font-weight:700; color:var(--color-primary);">₹${order.total_amount}</td>
             <td data-label="Date & Status" style="font-size:0.82rem; color:var(--color-text-muted);">
               ${dateStr}<br/>
-              <span class="badge badge-redirected" style="margin-top:4px;">
+              <span class="badge ${statusClass}" style="margin-top:4px;">
                 <span class="badge-dot"></span>
                 ${escapeHTML(order.status)}
               </span>
+              ${cancelButtonHTML}
+              ${deleteButtonHTML}
             </td>
           </tr>
         `;
@@ -1993,6 +2188,131 @@ async function loadHistoryRecords() {
   } catch (err) {
     console.error("Error loading history logs:", err);
     tbody.innerHTML = `<tr><td colspan="4" class="text-center" style="color:var(--color-error)">Failed to load records.</td></tr>`;
+  }
+}
+
+async function cancelOrder(orderId) {
+  if (!supabase) return;
+
+  try {
+    // 1. Fetch order details
+    const { data: order, error: fetchError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', orderId)
+      .single();
+
+    if (fetchError || !order) {
+      throw new Error(fetchError ? fetchError.message : "Order not found");
+    }
+
+    if (order.status === 'cancelled') {
+      alert("This order is already cancelled.");
+      return;
+    }
+
+    const orderIdShort = order.id.substring(0, 8).toUpperCase();
+    if (!confirm(`Are you sure you want to cancel order #${orderIdShort} for ${order.customer_name}? This will restore the ordered items' quantities back to the stock levels.`)) {
+      return;
+    }
+
+    // 2. Replenish stock for each item
+    for (const item of order.items) {
+      // Find stock row
+      const { data: stockRow, error: stockError } = await supabase
+        .from('product_stock')
+        .select('quantity')
+        .eq('product_id', item.id)
+        .eq('size', item.size)
+        .maybeSingle();
+
+      if (stockError) {
+        console.error(`Error checking stock for product ${item.name} (${item.size}):`, stockError);
+        continue;
+      }
+
+      if (stockRow) {
+        const newQty = stockRow.quantity + item.qty;
+        const { error: updateError } = await supabase
+          .from('product_stock')
+          .update({ quantity: newQty })
+          .eq('product_id', item.id)
+          .eq('size', item.size);
+        if (updateError) {
+          console.error(`Error updating stock for product ${item.name} (${item.size}):`, updateError);
+        }
+      } else {
+        // Stock row doesn't exist, recreate it
+        const { error: insertError } = await supabase
+          .from('product_stock')
+          .insert([{
+            product_id: item.id,
+            size: item.size,
+            quantity: item.qty
+          }]);
+        if (insertError) {
+          console.error(`Error inserting stock for product ${item.name} (${item.size}):`, insertError);
+        }
+      }
+    }
+
+    // 3. Update order status to 'cancelled'
+    const { error: updateOrderError } = await supabase
+      .from('orders')
+      .update({ status: 'cancelled' })
+      .eq('id', orderId);
+
+    if (updateOrderError) throw updateOrderError;
+
+    alert(`Order #${orderIdShort} has been successfully cancelled and stock has been replenished.`);
+    
+    // 4. Refresh logs & inventory views
+    await loadHistoryRecords();
+    await loadStockInventory();
+  } catch (err) {
+    console.error("Failed to cancel order:", err);
+    alert(`Failed to cancel order: ${err.message}`);
+  }
+}
+
+async function deleteOrder(orderId) {
+  if (!supabase) return;
+
+  try {
+    const { data: order, error: fetchError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', orderId)
+      .single();
+
+    if (fetchError || !order) {
+      throw new Error(fetchError ? fetchError.message : "Order not found");
+    }
+
+    const orderIdShort = order.id.substring(0, 8).toUpperCase();
+    
+    let warningMsg = `Are you sure you want to permanently delete order #${orderIdShort} for ${order.customer_name}? This action cannot be undone.`;
+    if (order.status === 'pending') {
+      warningMsg += "\n\n⚠️ NOTE: This order is still PENDING. Deleting it will NOT restore the stock inventory. If you want to restore the stock, please CANCEL the order first before deleting it.";
+    }
+
+    if (!confirm(warningMsg)) {
+      return;
+    }
+
+    const { error: deleteError } = await supabase
+      .from('orders')
+      .delete()
+      .eq('id', orderId);
+
+    if (deleteError) throw deleteError;
+
+    alert(`Order #${orderIdShort} has been deleted successfully.`);
+
+    await loadHistoryRecords();
+  } catch (err) {
+    console.error("Failed to delete order:", err);
+    alert(`Failed to delete order: ${err.message}`);
   }
 }
 

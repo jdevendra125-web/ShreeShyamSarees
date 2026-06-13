@@ -1401,6 +1401,11 @@ body {
   color: #059669;
 }
 
+.badge-cancelled {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
 .badge-dot {
   width: 6px;
   height: 6px;
@@ -1468,6 +1473,28 @@ body {
 }
 
 .btn-table-delete:hover {
+  background-color: var(--color-error);
+  color: white;
+}
+
+.btn-table-cancel, .btn-table-delete-order {
+  background: none;
+  border: 1px solid var(--color-error);
+  color: var(--color-error);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: var(--transition);
+  margin-top: 6px;
+}
+
+.btn-table-cancel:hover, .btn-table-delete-order:hover {
   background-color: var(--color-error);
   color: white;
 }
