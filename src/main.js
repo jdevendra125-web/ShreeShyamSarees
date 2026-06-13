@@ -881,9 +881,23 @@ async function sendEmailJSNotification(order, name, phone, address, items, total
 
   // Build items description
   const itemsText = items.map(i => `- ${i.name} (Size: ${i.size}${i.color ? `, Color: ${i.color}` : ''}) x ${i.qty} @ ₹${i.price}`).join('\n');
+  const itemsTextShort = items.map(i => `- ${i.name} (Size: ${i.size}${i.color ? `, Color: ${i.color}` : ''}) x ${i.qty}`).join('\n');
   const orderIdShort = order.id.substring(0, 8).toUpperCase();
   const cleanPhone = cleanPhoneNumber(phone);
-  const confirmMsg = `Hello ${name}, thank you for your order #${orderIdShort} on Shree Shyam Sarees. We have received it and would like to confirm your details.`;
+  const qrUrl = `${window.location.origin}/upi_qr.jpg`;
+
+  const confirmMsg = `Hello ${name}, thank you for your order #${orderIdShort} on Shree Shyam Sarees. 
+
+We have received your order with the following items:
+${itemsTextShort}
+
+Total Amount: ₹${total}
+
+Please make the payment of ₹${total} using UPI by scanning our QR code here:
+${qrUrl}
+
+Once paid, please share the payment screenshot here on WhatsApp. Thank you!`;
+
   const whatsappLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(confirmMsg)}`;
 
   const templateParams = {
