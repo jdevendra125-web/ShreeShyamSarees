@@ -2098,6 +2098,7 @@ function setupOwnerEventListeners() {
         formSimpleInvoice.reset();
 
         // 4. Construct WhatsApp Message
+        const invoiceUrl = `${window.location.origin}/?view=invoice&id=${newSale.id}`;
         const itemsSummary = invoiceItems.map(i => `- ${i.name} x ${i.qty} @ ₹${i.price}`).join('\n');
         
         const messageText = `Hello ${name}, thank you for shopping with Shree Shyam Collection!
@@ -2111,7 +2112,8 @@ ${itemsSummary}
 
 Total Amount: ₹${totalAmount}
 
-(Please find the attached PDF Invoice)
+You can view and download your full PDF Invoice here:
+${invoiceUrl}
 
 Please scan our PhonePe QR code to make the payment:
 ${window.location.origin}/upi_qr.jpg
@@ -2120,29 +2122,11 @@ Thank you!
 Sejal Jain (7028774699)
 Shree Shyam Collection`;
 
-        // 5. Download the PDF client-side
-        downloadInvoicePDF(newSale);
-
-        // 6. Set up the redirection modal details
+        // 5. Open WhatsApp with prefilled message
         const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`;
-        
-        const successModal = document.getElementById('modal-invoice-success');
-        const successTitle = document.getElementById('success-invoice-title');
-        const successPreview = document.getElementById('invoice-whatsapp-message-preview');
-        const redirectBtn = document.getElementById('btn-invoice-whatsapp-redirect');
+        window.open(waUrl, '_blank');
 
-        if (successTitle) successTitle.textContent = `Invoice #${newSale.id.substring(0, 8).toUpperCase()}`;
-        if (successPreview) successPreview.textContent = messageText;
-        if (redirectBtn) {
-          redirectBtn.onclick = () => {
-            window.open(waUrl, '_blank');
-            if (successModal) successModal.classList.add('hidden');
-          };
-        }
-
-        if (successModal) successModal.classList.remove('hidden');
-
-        // 7. Refresh Stall Sales logs list in dashboard
+        // 6. Refresh Stall Sales logs list in dashboard
         await loadHistoryRecords();
       } catch (err) {
         console.error("Failed to create simple invoice:", err);
