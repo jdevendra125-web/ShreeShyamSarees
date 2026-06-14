@@ -281,7 +281,7 @@ async function downloadInvoicePDF(sale) {
   container.style.left = '0';
   container.style.top = '0';
   container.style.width = '790px';
-  container.style.opacity = '0';
+  container.style.visibility = 'hidden';
   container.style.pointerEvents = 'none';
   container.style.zIndex = '99999';
   
@@ -374,6 +374,9 @@ async function downloadInvoicePDF(sale) {
 
   document.body.appendChild(container);
 
+  // Wait 150ms to ensure the browser has fully processed the layout and styling
+  await new Promise(resolve => setTimeout(resolve, 150));
+
   const opt = {
     margin:       [12, 12, 12, 12],
     filename:     `Invoice_${shortId}.pdf`,
@@ -384,10 +387,11 @@ async function downloadInvoicePDF(sale) {
       letterRendering: true, 
       scrollX: 0, 
       scrollY: 0,
+      windowWidth: 790,
       onclone: (clonedDoc) => {
         const clonedContainer = clonedDoc.getElementById('pdf-temp-container');
         if (clonedContainer) {
-          clonedContainer.style.opacity = '1';
+          clonedContainer.style.visibility = 'visible';
         }
       }
     },
@@ -399,7 +403,9 @@ async function downloadInvoicePDF(sale) {
   } catch (err) {
     console.error("PDF generation failed:", err);
   } finally {
-    document.body.removeChild(container);
+    if (document.body.contains(container)) {
+      document.body.removeChild(container);
+    }
   }
 }
 
