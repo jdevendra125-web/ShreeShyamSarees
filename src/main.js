@@ -277,7 +277,13 @@ async function downloadInvoicePDF(sale) {
 
   const container = document.createElement('div');
   container.id = 'pdf-temp-container';
-  container.style.display = 'none';
+  container.style.position = 'fixed';
+  container.style.left = '0';
+  container.style.top = '0';
+  container.style.width = '790px';
+  container.style.opacity = '0';
+  container.style.pointerEvents = 'none';
+  container.style.zIndex = '99999';
   
   const shortId = sale.id.substring(0, 8).toUpperCase();
   const dateObj = new Date(sale.created_at);
@@ -381,8 +387,7 @@ async function downloadInvoicePDF(sale) {
       onclone: (clonedDoc) => {
         const clonedContainer = clonedDoc.getElementById('pdf-temp-container');
         if (clonedContainer) {
-          clonedContainer.style.display = 'block';
-          clonedContainer.style.width = '790px';
+          clonedContainer.style.opacity = '1';
         }
       }
     },
