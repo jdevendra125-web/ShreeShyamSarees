@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Shree Shyam" />
     
-    <title>Shree Shyam Sarees - Visitor & Stock Hub</title>
+    <title>Shree Shyam Collection - Visitor & Stock Hub</title>
     <!-- Google Fonts: Playfair Display for ethnic serif headings, Outfit for clean UI text -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -41,7 +41,7 @@
             </svg>
           </div>
           <div class="header-titles">
-            <h1>Shree Shyam Sarees</h1>
+            <h1>Shree Shyam Collection</h1>
             <p class="subtitle">Online Boutique Store</p>
           </div>
           <!-- Cart Icon Badge -->
@@ -120,7 +120,7 @@
             </div>
           </div>
           <div class="footer-bottom">
-            <p>&copy; 2026 Shree Shyam Sarees. All Rights Reserved.</p>
+            <p>&copy; 2026 Shree Shyam Collection. All Rights Reserved.</p>
           </div>
         </footer>
       </div>
@@ -202,7 +202,7 @@
             </svg>
           </div>
           <div class="header-titles">
-            <h1>Shree Shyam Sarees</h1>
+            <h1>Shree Shyam Collection</h1>
             <p class="subtitle">Stall Manager & Sales Desk</p>
           </div>
           <button id="btn-settings-owner" class="btn-icon-only" title="Supabase Settings">
@@ -218,6 +218,7 @@
           <button class="tab-link active" data-tab="tab-visitors">Visitor Registry</button>
           <button class="tab-link" data-tab="tab-stock">Stock Management</button>
           <button class="tab-link" data-tab="tab-sales">Sales & Invoicing</button>
+          <button class="tab-link" data-tab="tab-simple-invoice">Invoice Creator</button>
         </nav>
 
         <!-- Main Layout Grid (Changes dynamically per tab) -->
@@ -522,6 +523,101 @@
             </div>
           </section>
 
+          <!-- TAB 4: SIMPLE INVOICE CREATOR -->
+          <section id="tab-simple-invoice" class="tab-content-grid hidden">
+            <!-- Left: Simple Invoice Form -->
+            <div class="card card-form">
+              <div class="card-header">
+                <h2>Create Simple Invoice</h2>
+                <p class="card-subtitle">Generate invoice and immediately send link/PDF on WhatsApp</p>
+              </div>
+              <form id="form-simple-invoice" autocomplete="off">
+                <div class="form-group">
+                  <label for="simple-cust-name">Customer Name <span class="required">*</span></label>
+                  <input type="text" id="simple-cust-name" placeholder="Enter customer name" required />
+                </div>
+
+                <div class="form-group">
+                  <label for="simple-cust-phone">WhatsApp Number <span class="required">*</span></label>
+                  <input type="tel" id="simple-cust-phone" placeholder="e.g. 9876543210" required />
+                </div>
+
+                <div class="form-group">
+                  <label>Date (Fixed)</label>
+                  <input type="text" value="Today (Fixed)" class="form-control" style="background-color: var(--color-bg-alt); cursor: not-allowed;" readonly />
+                </div>
+
+                <div class="form-group">
+                  <label>Signatory (Fixed)</label>
+                  <input type="text" value="Sejal Jain/ 7028774699" class="form-control" style="background-color: var(--color-bg-alt); cursor: not-allowed;" readonly />
+                </div>
+
+                <div class="form-group">
+                  <label>Store Address (Fixed)</label>
+                  <textarea class="form-control" style="background-color: var(--color-bg-alt); cursor: not-allowed; font-size: 0.85rem;" readonly rows="2">G2, Tapasya Apartment, 60ft Road, Near Madhu Maternity Hospital, Bhayandar West - 401101</textarea>
+                </div>
+
+                <!-- Simple Items Table -->
+                <div class="form-section-title mt-4">Invoice Items</div>
+                <div class="table-wrapper">
+                  <table class="visitors-table" style="min-width: 100%;">
+                    <thead>
+                      <tr>
+                        <th>Item</th>
+                        <th style="width: 80px;">Qty</th>
+                        <th style="width: 120px;">Rate (₹)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>Sarees</strong></td>
+                        <td><input type="number" id="simple-qty-sarees" min="0" value="0" style="padding: 6px; width: 100%;" /></td>
+                        <td><input type="number" id="simple-rate-sarees" min="0" placeholder="Rate" style="padding: 6px; width: 100%;" /></td>
+                      </tr>
+                      <tr>
+                        <td><strong>Coord Sets</strong></td>
+                        <td><input type="number" id="simple-qty-coords" min="0" value="0" style="padding: 6px; width: 100%;" /></td>
+                        <td><input type="number" id="simple-rate-coords" min="0" placeholder="Rate" style="padding: 6px; width: 100%;" /></td>
+                      </tr>
+                      <tr>
+                        <td><strong>Cotton Dress</strong></td>
+                        <td><input type="number" id="simple-qty-cotton" min="0" value="0" style="padding: 6px; width: 100%;" /></td>
+                        <td><input type="number" id="simple-rate-cotton" min="0" placeholder="Rate" style="padding: 6px; width: 100%;" /></td>
+                      </tr>
+                      <tr>
+                        <td><strong>Heavy Dress</strong></td>
+                        <td><input type="number" id="simple-qty-heavy" min="0" value="0" style="padding: 6px; width: 100%;" /></td>
+                        <td><input type="number" id="simple-rate-heavy" min="0" placeholder="Rate" style="padding: 6px; width: 100%;" /></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="form-actions mt-4">
+                  <button type="submit" id="btn-create-simple-invoice" class="btn-primary" style="width: 100%;">Create & Send Invoice</button>
+                </div>
+              </form>
+            </div>
+            
+            <!-- Right: Instructions / Simple Description -->
+            <div class="card card-list">
+              <div class="card-header">
+                <h2>Invoice Creator Guide</h2>
+                <p class="card-subtitle">Quickly issue simple invoices</p>
+              </div>
+              <div style="padding: 20px; line-height: 1.6; font-size: 0.9rem; color: var(--color-text);">
+                <p>Use this tab to create quick sales receipts for standard exhibition items: <strong>Sarees, Coord Sets, Cotton Dress, and Heavy Dress</strong>.</p>
+                <ul style="margin-top: 10px; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+                  <li>Simply type the quantity and rate for the item categories sold.</li>
+                  <li>Leave quantity as 0 for items not purchased.</li>
+                  <li>On submit, the customer will be automatically added to the **Visitor Registry** if their phone number is not already registered.</li>
+                  <li>The invoice is logged in the **Stall Sales** history and can be viewed or printed anytime.</li>
+                  <li>A direct link to the invoice will be generated so you can send the pre-filled PDF link to their WhatsApp instantly.</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
         </div>
       </div>
     </div>
@@ -719,7 +815,7 @@
         </div>
         <div class="modal-body" id="invoice-receipt-print-area">
           <div class="receipt-header">
-            <h2 class="receipt-store-title">SHREE SHYAM SAREES</h2>
+            <h2 class="receipt-store-title">SHREE SHYAM COLLECTION</h2>
             <p class="receipt-store-subtitle">Premium Saree Collections</p>
             <p class="receipt-store-address">G2, Tapasya Apartment, Bhayandar West, Mumbai - 401101</p>
             <p class="receipt-store-phone">Near Madhu Maternity Hospital</p>
@@ -801,6 +897,77 @@
     <div id="toast-notification" class="toast-notification">
       <span class="toast-icon">🌸</span>
       <span id="toast-message">Added to cart!</span>
+    </div>
+
+    <!-- Shared Invoice View (Customer & Owner Invoice Display) -->
+    <div id="invoice-view" class="view-container hidden" style="background-color: #fcfbf7; min-height: 100vh; padding: 40px 20px;">
+      <div class="invoice-paper" style="background: white; max-width: 800px; margin: 0 auto; box-shadow: var(--shadow-md); border-radius: var(--radius-md); padding: 40px; border: 1px solid var(--color-border); position: relative;">
+        <!-- Header -->
+        <div class="flex-row flex-between" style="border-bottom: 2px solid var(--color-primary); padding-bottom: 20px; flex-wrap: wrap; gap: 20px;">
+          <div>
+            <h1 style="font-family: var(--font-title); font-size: 2.2rem; color: var(--color-primary); margin-bottom: 6px;">SHREE SHYAM COLLECTION</h1>
+            <p style="font-size: 0.85rem; color: var(--color-text-muted); line-height: 1.4; max-width: 350px;">
+              G2, Tapasya Apartment, 60ft Road, Near Madhu Maternity Hospital, Bhayandar West - 401101
+            </p>
+          </div>
+          <div class="text-right" style="flex-grow: 1;">
+            <h2 style="font-family: var(--font-ui); font-size: 1.8rem; color: var(--color-accent-dark); font-weight: 700; margin-bottom: 6px;">INVOICE</h2>
+            <p style="font-size: 0.88rem; color: var(--color-text); font-weight: 500;">Invoice No: <span id="invoice-num" style="color: var(--color-primary); font-family: monospace;"></span></p>
+            <p style="font-size: 0.85rem; color: var(--color-text-muted);">Date: <span id="invoice-date"></span></p>
+          </div>
+        </div>
+
+        <!-- Details Grid -->
+        <div class="grid-col-2 mt-4" style="margin-bottom: 30px;">
+          <div>
+            <h4 style="font-family: var(--font-ui); color: var(--color-text-muted); font-size: 0.82rem; text-transform: uppercase; margin-bottom: 8px;">Billed To:</h4>
+            <p style="font-size: 1rem; font-weight: 700; color: var(--color-text);" id="invoice-bill-name"></p>
+            <p style="font-size: 0.9rem; color: var(--color-text-muted);" id="invoice-bill-phone"></p>
+          </div>
+          <div class="text-right">
+            <h4 style="font-family: var(--font-ui); color: var(--color-text-muted); font-size: 0.82rem; text-transform: uppercase; margin-bottom: 8px;">Signatory:</h4>
+            <p style="font-size: 0.95rem; font-weight: 600; color: var(--color-text);">Sejal Jain</p>
+            <p style="font-size: 0.85rem; color: var(--color-text-muted);">Mob: 7028774699</p>
+          </div>
+        </div>
+
+        <!-- Items Table -->
+        <table class="visitors-table" style="min-width: 100%; border: 1px solid var(--color-border); margin-bottom: 30px;">
+          <thead>
+            <tr style="background-color: var(--color-bg-alt);">
+              <th style="text-align: left; padding: 12px 16px;">Item Description</th>
+              <th style="width: 80px; text-align: center; padding: 12px 16px;">Qty</th>
+              <th style="width: 120px; text-align: right; padding: 12px 16px;">Rate</th>
+              <th style="width: 140px; text-align: right; padding: 12px 16px;">Amount</th>
+            </tr>
+          </thead>
+          <tbody id="invoice-items-tbody">
+            <!-- Dynamic rows -->
+          </tbody>
+        </table>
+
+        <!-- Summary -->
+        <div class="flex-row flex-end" style="border-top: 1px solid var(--color-border); padding-top: 20px;">
+          <div class="text-right" style="width: 250px;">
+            <div class="flex-row flex-between" style="font-size: 1.2rem; font-weight: 700; color: var(--color-primary); margin-top: 8px;">
+              <span>Grand Total:</span>
+              <span id="invoice-grand-total"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Note -->
+        <div style="margin-top: 50px; text-align: center; border-top: 1px dashed var(--color-border); padding-top: 20px; font-size: 0.85rem; color: var(--color-text-muted);">
+          <p>Thank you for shopping with Shree Shyam Collection!</p>
+          <p style="font-size: 0.78rem; margin-top: 4px;">This is a computer-generated invoice and does not require a physical signature.</p>
+        </div>
+
+        <!-- Actions (Hidden during print) -->
+        <div class="no-print mt-4 flex-row flex-center" style="gap: 16px;">
+          <button id="btn-invoice-print" class="btn-primary" style="padding: 10px 24px; font-size: 0.95rem;">Download / Save PDF</button>
+          <button id="btn-invoice-back-store" class="btn-secondary" style="padding: 10px 24px; font-size: 0.95rem;">Back to Store</button>
+        </div>
+      </div>
     </div>
 
     <!-- Main JS script -->

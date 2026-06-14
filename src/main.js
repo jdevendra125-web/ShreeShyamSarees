@@ -26,7 +26,7 @@ let activeHistoryTab = 'sales';
 // Constants
 const WHATSAPP_GROUP_LINK = "https://chat.whatsapp.com/K2jtomZ8v0zBQDKQydA4im?s=cl&p=a&mlu=2";
 const STORE_ADDRESS = "G2, Tapasya Apartment, Bhayandar West, Near Madhu Maternity Hospital, 401101";
-const FIRM_NAME = "Shree Shyam Sarees";
+const FIRM_NAME = "Shree Shyam Collection";
 
 const DEFAULT_SUPABASE_URL = "https://chientorhbzoqgzusnyp.supabase.co";
 const DEFAULT_SUPABASE_KEY = "sb_publishable_dwNTrG7o9s5htPN_PS09Sg_EWyLwkh1";
@@ -46,16 +46,20 @@ function initAppRouting() {
 
   const customerView = document.getElementById('customer-view');
   const ownerView = document.getElementById('owner-view');
+  const invoiceView = document.getElementById('invoice-view');
+
+  if (customerView) customerView.classList.add('hidden');
+  if (ownerView) ownerView.classList.add('hidden');
+  if (invoiceView) invoiceView.classList.add('hidden');
 
   if (view === 'owner') {
-    if (customerView) customerView.classList.add('hidden');
     if (ownerView) ownerView.classList.remove('hidden');
-    
     initOwnerPortal();
+  } else if (view === 'invoice') {
+    if (invoiceView) invoiceView.classList.remove('hidden');
+    initInvoiceView();
   } else {
     if (customerView) customerView.classList.remove('hidden');
-    if (ownerView) ownerView.classList.add('hidden');
-    
     initCustomerStorefront();
   }
 }
@@ -264,6 +268,74 @@ async function initCustomerStorefront() {
   await loadCatalogProducts();
 }
 
+async function initInvoiceView() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const saleId = urlParams.get('id');
+
+  const printBtn = document.getElementById('btn-invoice-print');
+  const backBtn = document.getElementById('btn-invoice-back-store');
+  const tbody = document.getElementById('invoice-items-tbody');
+
+  if (printBtn) {
+    printBtn.onclick = () => window.print();
+  }
+  if (backBtn) {
+    backBtn.onclick = () => {
+      window.location.href = window.location.origin;
+    };
+  }
+
+  if (!saleId) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="4" class="text-center" style="color: var(--color-error)">No Invoice ID provided in the URL.</td></tr>`;
+    return;
+  }
+
+  if (!supabase) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="4" class="text-center" style="color: var(--color-error)">Database connection is not initialized.</td></tr>`;
+    return;
+  }
+
+  try {
+    const { data: sale, error } = await supabase
+      .from('sales')
+      .select('*')
+      .eq('id', saleId)
+      .single();
+
+    if (error || !sale) {
+      throw new Error(error ? error.message : "Invoice not found");
+    }
+
+    const shortId = sale.id.substring(0, 8).toUpperCase();
+    document.getElementById('invoice-num').textContent = shortId;
+    document.getElementById('invoice-date').textContent = formatDate(sale.created_at);
+    document.getElementById('invoice-bill-name').textContent = sale.customer_name;
+    document.getElementById('invoice-bill-phone').textContent = sale.customer_phone;
+
+    if (tbody) {
+      tbody.innerHTML = sale.items.map(item => `
+        <tr>
+          <td style="padding: 12px 16px; text-align: left;">
+            <strong>${escapeHTML(item.name)}</strong>
+            ${item.size && item.size !== 'Free Size' && item.size !== '-' ? ` <span style="font-size:0.8rem; color:var(--color-text-muted);">(Size: ${item.size})</span>` : ''}
+            ${item.color ? ` <span style="font-size:0.8rem; color:var(--color-text-muted);">(Color: ${item.color})</span>` : ''}
+          </td>
+          <td class="text-center" style="padding: 12px 16px;">${item.qty}</td>
+          <td class="text-right" style="padding: 12px 16px;">₹${item.price}</td>
+          <td class="text-right" style="padding: 12px 16px; font-weight:600;">₹${item.qty * item.price}</td>
+        </tr>
+      `).join('');
+    }
+
+    document.getElementById('invoice-grand-total').textContent = `₹${sale.total_amount}`;
+  } catch (err) {
+    console.error("Failed to load invoice:", err);
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="4" class="text-center" style="color: var(--color-error)">Failed to load invoice: ${err.message}</td></tr>`;
+    }
+  }
+}
+
 async function loadCatalogProducts() {
   if (!supabase) return;
   const catalogGrid = document.getElementById('catalog-grid');
@@ -445,7 +517,7 @@ function renderCatalog(customProducts = null) {
       ? `<div class="offer-ribbon">OFFER</div>`
       : '';
 
-    const defaultPhoto = "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%25%22 height=%22100%25%22 fill=%22%23eae6d8%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2214%22 fill=%22%23800020%22 font-family=%22serif%22>Shree Shyam Sarees</text></svg>";
+    const defaultPhoto = "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%25%22 height=%22100%25%22 fill=%22%23eae6d8%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2214%22 fill=%22%23800020%22 font-family=%22serif%22>Shree Shyam Collection</text></svg>";
 
     const finalPhotoUrl = product.photo_url || defaultPhoto;
 
@@ -886,7 +958,7 @@ async function sendEmailJSNotification(order, name, phone, address, items, total
   const cleanPhone = cleanPhoneNumber(phone);
   const qrUrl = `${window.location.origin}/upi_qr.jpg`;
 
-  const confirmMsg = `Hello ${name}, thank you for your order #${orderIdShort} on Shree Shyam Sarees. 
+  const confirmMsg = `Hello ${name}, thank you for your order #${orderIdShort} on Shree Shyam Collection. 
 
 We have received your order with the following items:
 ${itemsTextShort}
@@ -1692,6 +1764,156 @@ function setupOwnerEventListeners() {
               btnDelete.textContent = originalText;
             }
           }
+        }
+      }
+    });
+  }
+
+  // Handle Simple Invoice Creation
+  const formSimpleInvoice = document.getElementById('form-simple-invoice');
+  if (formSimpleInvoice) {
+    formSimpleInvoice.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!supabase) {
+        alert("Database connection is not configured.");
+        return;
+      }
+
+      const name = document.getElementById('simple-cust-name').value.trim();
+      const phone = document.getElementById('simple-cust-phone').value.trim();
+
+      // Collect items from inputs
+      const itemConfigs = [
+        { name: 'Sarees', qtyId: 'simple-qty-sarees', rateId: 'simple-rate-sarees' },
+        { name: 'Coord Sets', qtyId: 'simple-qty-coords', rateId: 'simple-rate-coords' },
+        { name: 'Cotton Dress', qtyId: 'simple-qty-cotton', rateId: 'simple-rate-cotton' },
+        { name: 'Heavy Dress', qtyId: 'simple-qty-heavy', rateId: 'simple-rate-heavy' }
+      ];
+
+      const invoiceItems = [];
+      let totalAmount = 0;
+
+      for (const cfg of itemConfigs) {
+        const qty = parseInt(document.getElementById(cfg.qtyId).value) || 0;
+        const rate = parseFloat(document.getElementById(cfg.rateId).value) || 0;
+        if (qty > 0) {
+          if (rate <= 0) {
+            alert(`Please enter a valid rate for ${cfg.name}.`);
+            return;
+          }
+          invoiceItems.push({
+            id: cfg.name.toLowerCase().replace(' ', '_'),
+            name: cfg.name,
+            size: '-',
+            qty: qty,
+            price: rate
+          });
+          totalAmount += qty * rate;
+        }
+      }
+
+      if (invoiceItems.length === 0) {
+        alert("Please add at least one item with a quantity greater than 0.");
+        return;
+      }
+
+      const submitBtn = document.getElementById('btn-create-simple-invoice');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Creating Invoice...";
+      }
+
+      try {
+        // 1. Check if the customer mobile number exists in visitors database
+        const cleanPhone = cleanPhoneNumber(phone);
+        const { data: existingVisitor, error: visitorCheckError } = await supabase
+          .from('visitors')
+          .select('*')
+          .eq('whatsapp_number', cleanPhone)
+          .maybeSingle();
+
+        if (visitorCheckError) {
+          console.warn("Error checking existing visitor:", visitorCheckError);
+        }
+
+        if (!existingVisitor) {
+          // Add them to database (visitors table)
+          console.log("Customer not found in database. Auto-registering...");
+          const { error: insertVisitorError } = await supabase
+            .from('visitors')
+            .insert([{
+              name: name,
+              place: 'Stall Sale', // Default place
+              whatsapp_number: cleanPhone,
+              sms_status: 'invited' // mark as invited since they are receiving checkout WhatsApp
+            }]);
+          
+          if (insertVisitorError) {
+            console.error("Auto-registering visitor failed:", insertVisitorError);
+          } else {
+            console.log("Customer successfully registered in database.");
+            // Refresh visitors log in dashboard
+            await fetchVisitors();
+          }
+        }
+
+        // 2. Insert invoice record into sales table
+        const { data: saleData, error: saleError } = await supabase
+          .from('sales')
+          .insert([{
+            customer_name: name,
+            customer_phone: phone,
+            items: invoiceItems,
+            total_amount: totalAmount
+          }])
+          .select();
+
+        if (saleError) throw saleError;
+        const newSale = saleData[0];
+
+        // 3. Clear form inputs
+        formSimpleInvoice.reset();
+
+        // 4. Construct WhatsApp Message with the hosted invoice URL
+        const invoiceUrl = `${window.location.origin}/?view=invoice&id=${newSale.id}`;
+        const itemsSummary = invoiceItems.map(i => `- ${i.name} x ${i.qty} @ ₹${i.price}`).join('\n');
+        
+        const messageText = `Hello ${name}, thank you for shopping with Shree Shyam Collection!
+
+Here is your Invoice:
+Invoice No: #${newSale.id.substring(0, 8).toUpperCase()}
+Date: ${formatDate(newSale.created_at)}
+
+Items:
+${itemsSummary}
+
+Total Amount: ₹${totalAmount}
+
+You can view and download your full PDF Invoice here:
+${invoiceUrl}
+
+Please scan our PhonePe QR code to make the payment:
+${window.location.origin}/upi_qr.jpg
+
+Thank you!
+Sejal Jain (7028774699)
+Shree Shyam Collection`;
+
+        // 5. Open WhatsApp with prefilled message
+        const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`;
+        window.open(waUrl, '_blank');
+
+        // 6. Refresh Stall Sales logs list in dashboard
+        await loadHistoryRecords();
+
+        alert(`Invoice created successfully! WhatsApp redirect opened.`);
+      } catch (err) {
+        console.error("Failed to create simple invoice:", err);
+        alert(`Failed to create invoice: ${err.message}`);
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Create & Send Invoice";
         }
       }
     });

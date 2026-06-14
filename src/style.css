@@ -1934,19 +1934,26 @@ body {
     visibility: hidden;
   }
   
-  /* Show only the invoice receipt print area */
+  /* Show only the invoice receipt print area or shared invoice view */
   #invoice-receipt-print-area,
-  #invoice-receipt-print-area * {
+  #invoice-receipt-print-area *,
+  #invoice-view,
+  #invoice-view * {
     visibility: visible;
   }
   
-  #invoice-receipt-print-area {
+  #invoice-receipt-print-area,
+  #invoice-view {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
     background-color: white !important;
     color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
   }
   
   .modal-overlay {
