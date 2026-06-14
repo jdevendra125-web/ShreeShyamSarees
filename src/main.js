@@ -2120,8 +2120,8 @@ Thank you!
 Sejal Jain (7028774699)
 Shree Shyam Collection`;
 
-        // 5. Download the PDF client-side
-        await downloadInvoicePDF(newSale);
+        // 5. Download the PDF client-side (non-blocking to prevent popup blocker)
+        downloadInvoicePDF(newSale);
 
         // 6. Open WhatsApp with prefilled message
         const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`;
@@ -2130,7 +2130,7 @@ Shree Shyam Collection`;
         // 7. Refresh Stall Sales logs list in dashboard
         await loadHistoryRecords();
 
-        alert(`Invoice created successfully!\n\n1. The PDF invoice has been downloaded to your device.\n2. WhatsApp has been opened. Please attach the downloaded PDF to the chat.`);
+        alert(`Invoice created successfully!\n\n1. The PDF invoice download has started.\n2. WhatsApp has been opened. Please attach the downloaded PDF to the chat.`);
       } catch (err) {
         console.error("Failed to create simple invoice:", err);
         alert(`Failed to create invoice: ${err.message}`);
