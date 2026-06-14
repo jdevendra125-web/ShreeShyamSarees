@@ -464,62 +464,7 @@
 
           <!-- TAB 3: SALES & INVOICING -->
           <section id="tab-sales" class="tab-content-grid hidden">
-            <!-- Left: Record Sale Invoice -->
-            <div class="card card-form">
-              <div class="card-header">
-                <h2>Record Stall Sale</h2>
-                <p class="card-subtitle">Generate invoices for customers at your exhibition stall</p>
-              </div>
-              <form id="form-sale" autocomplete="off">
-                <div class="form-group">
-                  <label for="sale-cust-name">Customer Name <span class="required">*</span></label>
-                  <input type="text" id="sale-cust-name" placeholder="Enter customer name" required />
-                </div>
-
-                <div class="form-group">
-                  <label for="sale-cust-phone">WhatsApp Number <span class="required">*</span></label>
-                  <input type="tel" id="sale-cust-phone" placeholder="e.g. 9876543210" required />
-                </div>
-
-                <!-- Product Basket Builder -->
-                <div class="form-group basket-group">
-                  <label>Add Items to Invoice Basket</label>
-                  
-                  <div class="basket-selector-row" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <input type="text" id="basket-sku-input" placeholder="Enter SKU" class="form-select" style="flex: 2; min-width: 120px; font-size: 16px;" />
-                    
-                    <select id="basket-size-select" class="form-select" style="flex: 1.2; min-width: 80px;">
-                      <option value="">Size</option>
-                    </select>
-
-                    <select id="basket-color-select" class="form-select" style="flex: 1.2; min-width: 80px;">
-                      <option value="">Color</option>
-                    </select>
-                    
-                    <input type="number" id="basket-qty-input" placeholder="Qty" min="1" value="1" class="form-select" style="flex: 1; min-width: 60px;" />
-                    
-                    <button type="button" id="btn-add-to-basket" class="btn-secondary" style="flex: 1; min-width: 70px;">Add</button>
-                  </div>
-                  
-                  <!-- Current Basket Items -->
-                  <div id="invoice-basket-container" class="invoice-basket-container">
-                    <p class="basket-empty-msg">No items in invoice basket.</p>
-                  </div>
-                </div>
-
-                <div class="invoice-total-card">
-                  <span>Grand Total:</span>
-                  <span id="invoice-basket-total">₹0</span>
-                </div>
-
-                <button type="submit" id="btn-generate-invoice" class="btn-primary">
-                  <span>Generate Invoice & Record Sale</span>
-                  <div class="spinner hidden" id="sale-spinner"></div>
-                </button>
-              </form>
-            </div>
-
-            <!-- Right: Sales & Order Log -->
+            <!-- Sales & Order Log -->
             <div class="card card-list">
               <div class="card-header">
                 <h2>Sales & Order History</h2>

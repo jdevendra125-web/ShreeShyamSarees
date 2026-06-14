@@ -2408,3 +2408,8 @@ textarea:focus {
   opacity: 1;
 }
 
+/* Make Sales tab full width after removing left basket form */
+#tab-sales.tab-content-grid {
+  grid-template-columns: 1fr;
+}
+
