@@ -281,7 +281,8 @@ async function downloadInvoicePDF(sale) {
   container.style.left = '0';
   container.style.top = '0';
   container.style.width = '790px';
-  container.style.visibility = 'hidden';
+  container.style.height = '1px';
+  container.style.overflow = 'hidden';
   container.style.pointerEvents = 'none';
   container.style.zIndex = '99999';
   
@@ -389,9 +390,10 @@ async function downloadInvoicePDF(sale) {
       scrollY: 0,
       windowWidth: 790,
       onclone: (clonedDoc) => {
-        const clonedContainer = clonedDoc.getElementById('pdf-temp-container');
+        const clonedContainer = clonedDoc.getElementById('pdf-temp-container') || clonedDoc.querySelector('#pdf-temp-container');
         if (clonedContainer) {
-          clonedContainer.style.visibility = 'visible';
+          clonedContainer.style.height = 'auto';
+          clonedContainer.style.overflow = 'visible';
         }
       }
     },
