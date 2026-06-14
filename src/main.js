@@ -2120,17 +2120,30 @@ Thank you!
 Sejal Jain (7028774699)
 Shree Shyam Collection`;
 
-        // 5. Download the PDF client-side (non-blocking to prevent popup blocker)
+        // 5. Download the PDF client-side
         downloadInvoicePDF(newSale);
 
-        // 6. Open WhatsApp with prefilled message
+        // 6. Set up the redirection modal details
         const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`;
-        window.open(waUrl, '_blank');
+        
+        const successModal = document.getElementById('modal-invoice-success');
+        const successTitle = document.getElementById('success-invoice-title');
+        const successPreview = document.getElementById('invoice-whatsapp-message-preview');
+        const redirectBtn = document.getElementById('btn-invoice-whatsapp-redirect');
+
+        if (successTitle) successTitle.textContent = `Invoice #${newSale.id.substring(0, 8).toUpperCase()}`;
+        if (successPreview) successPreview.textContent = messageText;
+        if (redirectBtn) {
+          redirectBtn.onclick = () => {
+            window.open(waUrl, '_blank');
+            if (successModal) successModal.classList.add('hidden');
+          };
+        }
+
+        if (successModal) successModal.classList.remove('hidden');
 
         // 7. Refresh Stall Sales logs list in dashboard
         await loadHistoryRecords();
-
-        alert(`Invoice created successfully!\n\n1. The PDF invoice download has started.\n2. WhatsApp has been opened. Please attach the downloaded PDF to the chat.`);
       } catch (err) {
         console.error("Failed to create simple invoice:", err);
         alert(`Failed to create invoice: ${err.message}`);
@@ -2242,6 +2255,15 @@ Shree Shyam Collection`;
     });
   }
 
+  // Close Invoice Success modal
+  const modalInvoiceSuccess = document.getElementById('modal-invoice-success');
+  const btnCloseInvoiceSuccess = document.getElementById('btn-close-invoice-success');
+  if (btnCloseInvoiceSuccess) {
+    btnCloseInvoiceSuccess.addEventListener('click', () => {
+      if (modalInvoiceSuccess) modalInvoiceSuccess.classList.add('hidden');
+    });
+  }
+
   // Close modals on overlay clicks
   window.addEventListener('click', (e) => {
     const modalInvoice = document.getElementById('modal-invoice');
@@ -2250,6 +2272,7 @@ Shree Shyam Collection`;
     if (e.target === modalInvoice) modalInvoice.classList.add('hidden');
     if (e.target === modalEditStock) modalEditStock.classList.add('hidden');
     if (e.target === modalEditInvoice) modalEditInvoice.classList.add('hidden');
+    if (e.target === modalInvoiceSuccess) modalInvoiceSuccess.classList.add('hidden');
   });
 }
 
