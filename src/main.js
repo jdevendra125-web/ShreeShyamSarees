@@ -2143,11 +2143,113 @@ Shree Shyam Collection`;
     });
   }
 
+  // Edit Invoice Event Listeners
+  const modalEditInvoice = document.getElementById('modal-edit-invoice');
+  const btnCloseEditInvoice = document.getElementById('btn-close-edit-invoice');
+  const formEditInvoice = document.getElementById('form-edit-invoice');
+
+  if (btnCloseEditInvoice) {
+    btnCloseEditInvoice.addEventListener('click', () => {
+      if (modalEditInvoice) modalEditInvoice.classList.add('hidden');
+    });
+  }
+
+  if (formEditInvoice) {
+    formEditInvoice.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!supabase) return;
+
+      const saleId = document.getElementById('edit-invoice-id').value;
+      const name = document.getElementById('edit-invoice-cust-name').value.trim();
+      const phone = document.getElementById('edit-invoice-cust-phone').value.trim();
+
+      const itemConfigs = [
+        { name: 'Sarees', qtyId: 'edit-invoice-qty-sarees', rateId: 'edit-invoice-rate-sarees' },
+        { name: 'Coord Sets', qtyId: 'edit-invoice-qty-coords', rateId: 'edit-invoice-rate-coords' },
+        { name: 'Cotton Dress', qtyId: 'edit-invoice-qty-cotton', rateId: 'edit-invoice-rate-cotton' },
+        { name: 'Heavy Dress', qtyId: 'edit-invoice-qty-heavy', rateId: 'edit-invoice-rate-heavy' }
+      ];
+
+      const invoiceItems = [];
+      let totalAmount = 0;
+
+      for (const cfg of itemConfigs) {
+        const qty = parseInt(document.getElementById(cfg.qtyId).value) || 0;
+        const rate = parseFloat(document.getElementById(cfg.rateId).value) || 0;
+        if (qty > 0) {
+          if (rate <= 0) {
+            alert(`Please enter a valid rate for ${cfg.name}.`);
+            return;
+          }
+          invoiceItems.push({
+            id: cfg.name.toLowerCase().replace(' ', '_'),
+            name: cfg.name,
+            size: '-',
+            qty: qty,
+            price: rate
+          });
+          totalAmount += qty * rate;
+        }
+      }
+
+      if (invoiceItems.length === 0) {
+        alert("Please add at least one item with a quantity greater than 0.");
+        return;
+      }
+
+      const saveBtn = document.getElementById('btn-save-edit-invoice');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving Changes...";
+      }
+
+      try {
+        const { error } = await supabase
+          .from('sales')
+          .update({
+            customer_name: name,
+            customer_phone: phone,
+            items: invoiceItems,
+            total_amount: totalAmount
+          })
+          .eq('id', saleId);
+
+        if (error) throw error;
+
+        // Fetch updated sale record to download PDF
+        const { data: updatedSale } = await supabase
+          .from('sales')
+          .select('*')
+          .eq('id', saleId)
+          .single();
+
+        if (updatedSale) {
+          downloadInvoicePDF(updatedSale);
+        }
+
+        if (modalEditInvoice) modalEditInvoice.classList.add('hidden');
+        await loadHistoryRecords();
+        alert("Invoice updated successfully and new PDF download started.");
+      } catch (err) {
+        console.error("Failed to update invoice:", err);
+        alert("Failed to update invoice: " + err.message);
+      } finally {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = "Save Changes & Download PDF";
+        }
+      }
+    });
+  }
+
   // Close modals on overlay clicks
   window.addEventListener('click', (e) => {
     const modalInvoice = document.getElementById('modal-invoice');
+    const modalEditStock = document.getElementById('modal-edit-stock');
+    const modalEditInvoice = document.getElementById('modal-edit-invoice');
     if (e.target === modalInvoice) modalInvoice.classList.add('hidden');
     if (e.target === modalEditStock) modalEditStock.classList.add('hidden');
+    if (e.target === modalEditInvoice) modalEditInvoice.classList.add('hidden');
   });
 }
 
@@ -2590,8 +2692,10 @@ async function loadHistoryRecords() {
             <td data-label="Date" style="font-size:0.82rem; color:var(--color-text-muted);">${dateStr}</td>
             <td data-label="Actions">
               <div style="display:flex; flex-direction:column; gap:4px; max-width:80px;">
-                <button class="btn-table-pdf-download btn-secondary" style="padding: 4px 8px; font-size: 0.75rem;" data-sale-id="${sale.id}">PDF</button>
-                <button class="btn-table-view-invoice btn-primary" style="padding: 4px 8px; font-size: 0.75rem;" data-sale-id="${sale.id}">View</button>
+                <button class="btn-table-pdf-download btn-secondary" style="padding: 4px 8px; font-size: 0.72rem;" data-sale-id="${sale.id}">PDF</button>
+                <button class="btn-table-view-invoice btn-primary" style="padding: 4px 8px; font-size: 0.72rem;" data-sale-id="${sale.id}">View</button>
+                <button class="btn-table-edit-invoice btn-secondary" style="padding: 4px 8px; font-size: 0.72rem; color: var(--color-accent-dark); border-color: var(--color-accent-dark);" data-sale-id="${sale.id}">Edit</button>
+                <button class="btn-table-delete-invoice btn-secondary" style="padding: 4px 8px; font-size: 0.72rem; color: var(--color-error); border-color: var(--color-error);" data-sale-id="${sale.id}">Delete</button>
               </div>
             </td>
           </tr>

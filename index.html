@@ -516,20 +516,7 @@
                   <input type="tel" id="simple-cust-phone" placeholder="e.g. 9876543210" required />
                 </div>
 
-                <div class="form-group">
-                  <label>Date (Fixed)</label>
-                  <input type="text" value="Today (Fixed)" class="form-control" style="background-color: var(--color-bg-alt); cursor: not-allowed;" readonly />
-                </div>
 
-                <div class="form-group">
-                  <label>Signatory (Fixed)</label>
-                  <input type="text" value="Sejal Jain/ 7028774699" class="form-control" style="background-color: var(--color-bg-alt); cursor: not-allowed;" readonly />
-                </div>
-
-                <div class="form-group">
-                  <label>Store Address (Fixed)</label>
-                  <textarea class="form-control" style="background-color: var(--color-bg-alt); cursor: not-allowed; font-size: 0.85rem;" readonly rows="2">G2, Tapasya Apartment, 60ft Road, Near Madhu Maternity Hospital, Bhayandar West - 401101</textarea>
-                </div>
 
                 <!-- Simple Items Table -->
                 <div class="form-section-title mt-4">Invoice Items</div>
@@ -601,6 +588,68 @@
     <!-- ============================================ -->
     <!--           COMMON DIALOGS & MODALS            -->
     <!-- ============================================ -->
+
+    <!-- Edit Invoice Modal -->
+    <div id="modal-edit-invoice" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Edit Stall Invoice</h3>
+          <button class="btn-close-modal" id="btn-close-edit-invoice">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form id="form-edit-invoice" autocomplete="off">
+            <input type="hidden" id="edit-invoice-id" />
+            <div class="form-group">
+              <label for="edit-invoice-cust-name">Customer Name <span class="required">*</span></label>
+              <input type="text" id="edit-invoice-cust-name" required />
+            </div>
+            <div class="form-group">
+              <label for="edit-invoice-cust-phone">WhatsApp Number <span class="required">*</span></label>
+              <input type="tel" id="edit-invoice-cust-phone" required />
+            </div>
+            
+            <div class="form-section-title mt-4">Invoice Items</div>
+            <div class="table-wrapper">
+              <table class="visitors-table" style="min-width: 100%;">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th style="width: 80px;">Qty</th>
+                    <th style="width: 120px;">Rate (₹)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Sarees</strong></td>
+                    <td><input type="number" id="edit-invoice-qty-sarees" min="0" value="0" style="padding: 6px; width: 100%;" /></td>
+                    <td><input type="number" id="edit-invoice-rate-sarees" min="0" placeholder="Rate" style="padding: 6px; width: 100%;" /></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Coord Sets</strong></td>
+                    <td><input type="number" id="edit-invoice-qty-coords" min="0" value="0" style="padding: 6px; width: 100%;" /></td>
+                    <td><input type="number" id="edit-invoice-rate-coords" min="0" placeholder="Rate" style="padding: 6px; width: 100%;" /></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Cotton Dress</strong></td>
+                    <td><input type="number" id="edit-invoice-qty-cotton" min="0" value="0" style="padding: 6px; width: 100%;" /></td>
+                    <td><input type="number" id="edit-invoice-rate-cotton" min="0" placeholder="Rate" style="padding: 6px; width: 100%;" /></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Heavy Dress</strong></td>
+                    <td><input type="number" id="edit-invoice-qty-heavy" min="0" value="0" style="padding: 6px; width: 100%;" /></td>
+                    <td><input type="number" id="edit-invoice-rate-heavy" min="0" placeholder="Rate" style="padding: 6px; width: 100%;" /></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <div class="form-actions mt-4">
+              <button type="submit" id="btn-save-edit-invoice" class="btn-primary" style="width: 100%;">Save Changes & Download PDF</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
 
     <!-- Settings Modal (Supabase & EmailJS config) -->
     <div id="modal-settings" class="modal-overlay hidden">
