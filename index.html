@@ -17,6 +17,8 @@
     
     <!-- EmailJS SDK Integration -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <!-- html2pdf.js for direct PDF downloads -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   </head>
   <body>
 
@@ -191,35 +193,61 @@
         <a href="/" class="btn-storefront-link">View Public Storefront</a>
       </div>
 
-      <div class="app-container">
-        <!-- Owner Header -->
-        <header class="app-header">
-          <div class="header-logo">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="flower-icon">
-              <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
-              <path d="M12 6a6 6 0 0 0-6 6c0 2.22 1.208 4.16 3 5.19A6.002 6.002 0 0 0 18 12a6 6 0 0 0-6-6z"/>
-              <circle cx="12" cy="12" r="2" fill="currentColor"/>
-            </svg>
+      <div class="owner-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="owner-sidebar collapsed" id="owner-sidebar">
+          <div class="sidebar-header">
+            <div class="sidebar-logo">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="flower-icon">
+                <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+                <path d="M12 6a6 6 0 0 0-6 6c0 2.22 1.208 4.16 3 5.19A6.002 6.002 0 0 0 18 12a6 6 0 0 0-6-6z"/>
+                <circle cx="12" cy="12" r="2" fill="currentColor"/>
+              </svg>
+              <span>Shree Shyam</span>
+            </div>
+            <button id="btn-close-sidebar" class="btn-icon-only close-sidebar-btn" title="Close Menu">&times;</button>
           </div>
-          <div class="header-titles">
-            <h1>Shree Shyam Collection</h1>
-            <p class="subtitle">Stall Manager & Sales Desk</p>
-          </div>
-          <button id="btn-settings-owner" class="btn-icon-only" title="Supabase Settings">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-            </svg>
-          </button>
-        </header>
+          <nav class="sidebar-nav">
+            <button class="tab-link active" data-tab="tab-visitors">
+              <span class="nav-icon">👤</span> Visitor Registry
+            </button>
+            <button class="tab-link" data-tab="tab-stock">
+              <span class="nav-icon">📦</span> Stock Management
+            </button>
+            <button class="tab-link" data-tab="tab-sales">
+              <span class="nav-icon">📊</span> Sales & Invoicing
+            </button>
+            <button class="tab-link" data-tab="tab-simple-invoice">
+              <span class="nav-icon">🧾</span> Invoice Creator
+            </button>
+          </nav>
+        </aside>
+        
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-        <!-- Admin Tab Navigation -->
-        <nav class="owner-tabs">
-          <button class="tab-link active" data-tab="tab-visitors">Visitor Registry</button>
-          <button class="tab-link" data-tab="tab-stock">Stock Management</button>
-          <button class="tab-link" data-tab="tab-sales">Sales & Invoicing</button>
-          <button class="tab-link" data-tab="tab-simple-invoice">Invoice Creator</button>
-        </nav>
+        <div class="owner-main expanded" id="owner-main">
+          <!-- Owner Header -->
+          <header class="app-header">
+            <div class="header-left-group">
+              <button id="btn-hamburger" class="btn-icon-only hamburger-menu-btn" title="Menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="3" y1="12" x2="21" y2="12"></line>
+                  <line x1="3" y1="6" x2="21" y2="6"></line>
+                  <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+              </button>
+              <div class="header-titles">
+                <h1>Shree Shyam Collection</h1>
+                <p class="subtitle">Stall Manager & Sales Desk</p>
+              </div>
+            </div>
+            <button id="btn-settings-owner" class="btn-icon-only" title="Supabase Settings">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+            </button>
+          </header>
 
         <!-- Main Layout Grid (Changes dynamically per tab) -->
         <div class="dashboard-grid">
@@ -513,10 +541,11 @@
                       <th>Items Sold</th>
                       <th>Total Paid</th>
                       <th>Date</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody id="history-tbody">
-                    <tr><td colspan="4" class="text-center">Loading sales records...</td></tr>
+                    <tr><td colspan="5" class="text-center">Loading sales records...</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -621,6 +650,7 @@
         </div>
       </div>
     </div>
+  </div>
 
 
     <!-- ============================================ -->

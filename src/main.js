@@ -268,6 +268,125 @@ async function initCustomerStorefront() {
   await loadCatalogProducts();
 }
 
+async function downloadInvoicePDF(sale) {
+  if (typeof html2pdf === 'undefined') {
+    console.error("html2pdf library is not loaded.");
+    alert("PDF generator library is still loading. Please try again in a few seconds.");
+    return;
+  }
+
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.left = '-9999px';
+  container.style.top = '-9999px';
+  container.style.width = '790px';
+  
+  const shortId = sale.id.substring(0, 8).toUpperCase();
+  const dateObj = new Date(sale.created_at);
+  const dateFormatted = dateObj.toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
+
+  const itemsHtml = sale.items.map(item => `
+    <tr>
+      <td style="padding: 14px 16px; text-align: left; border-bottom: 1px solid #f0ebdc; font-size: 13px;">
+        <strong style="color: #2d2a26;">${item.name}</strong>
+        ${item.size && item.size !== 'Free Size' && item.size !== '-' ? ` <span style="font-size:11px; color:#736e67; margin-left: 6px;">(Size: ${item.size})</span>` : ''}
+        ${item.color ? ` <span style="font-size:11px; color:#736e67; margin-left: 6px;">(Color: ${item.color})</span>` : ''}
+      </td>
+      <td style="padding: 14px 16px; text-align: center; border-bottom: 1px solid #f0ebdc; color: #2d2a26; font-size: 13px;">${item.qty}</td>
+      <td style="padding: 14px 16px; text-align: right; border-bottom: 1px solid #f0ebdc; color: #2d2a26; font-size: 13px;">₹${item.price}</td>
+      <td style="padding: 14px 16px; text-align: right; border-bottom: 1px solid #f0ebdc; font-weight: 600; color: #800020; font-size: 13px;">₹${item.qty * item.price}</td>
+    </tr>
+  `).join('');
+
+  container.innerHTML = `
+    <div style="background: white; padding: 45px; font-family: 'Outfit', 'Inter', sans-serif; color: #2d2a26; border-radius: 8px;">
+      <!-- Top Header -->
+      <div style="display: flex; justify-content: space-between; border-bottom: 3px solid #800020; padding-bottom: 24px; align-items: flex-start;">
+        <div>
+          <h1 style="font-family: 'Playfair Display', serif; font-size: 26px; color: #800020; margin: 0 0 6px 0; font-weight: 700; letter-spacing: 0.5px;">SHREE SHYAM COLLECTION</h1>
+          <p style="font-size: 11px; color: #736e67; margin: 0; line-height: 1.5; max-width: 320px;">
+            G2, Tapasya Apartment, 60ft Road, Near Madhu Maternity Hospital, Bhayandar West - 401101
+          </p>
+        </div>
+        <div style="text-align: right;">
+          <h2 style="font-size: 24px; color: #916f15; margin: 0 0 6px 0; font-weight: 700; letter-spacing: 1px;">INVOICE</h2>
+          <p style="font-size: 13px; margin: 0; font-weight: 500; color: #2d2a26;">Invoice No: <span style="color: #800020; font-family: monospace; font-weight: 700;">#${shortId}</span></p>
+          <p style="font-size: 11px; color: #736e67; margin: 4px 0 0 0;">Date: ${dateFormatted}</p>
+        </div>
+      </div>
+
+      <!-- Details Grid -->
+      <div style="display: flex; justify-content: space-between; margin-top: 30px; margin-bottom: 30px; line-height: 1.4;">
+        <div>
+          <h4 style="color: #736e67; font-size: 11px; text-transform: uppercase; margin: 0 0 8px 0; letter-spacing: 0.5px; font-weight: 600;">Billed To:</h4>
+          <p style="font-size: 14px; font-weight: 700; color: #2d2a26; margin: 0 0 4px 0;">${sale.customer_name}</p>
+          <p style="font-size: 12px; color: #736e67; margin: 0; font-weight: 500;">${sale.customer_phone}</p>
+        </div>
+        <div style="text-align: right;">
+          <h4 style="color: #736e67; font-size: 11px; text-transform: uppercase; margin: 0 0 8px 0; letter-spacing: 0.5px; font-weight: 600;">Signatory:</h4>
+          <p style="font-size: 13px; font-weight: 600; color: #2d2a26; margin: 0 0 4px 0;">Sejal Jain</p>
+          <p style="font-size: 12px; color: #736e67; margin: 0; font-weight: 500;">Mob: 7028774699</p>
+        </div>
+      </div>
+
+      <!-- Items Table -->
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 13px; border: 1px solid #f0ebdc;">
+        <thead>
+          <tr style="background-color: #fdfcf7;">
+            <th style="text-align: left; padding: 12px; border-bottom: 1px solid #f0ebdc; font-weight: 600; color: #736e67;">Item Description</th>
+            <th style="width: 80px; text-align: center; padding: 12px; border-bottom: 1px solid #f0ebdc; font-weight: 600; color: #736e67;">Qty</th>
+            <th style="width: 100px; text-align: right; padding: 12px; border-bottom: 1px solid #f0ebdc; font-weight: 600; color: #736e67;">Rate</th>
+            <th style="width: 120px; text-align: right; padding: 12px; border-bottom: 1px solid #f0ebdc; font-weight: 600; color: #736e67;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsHtml}
+        </tbody>
+      </table>
+
+      <!-- Summary -->
+      <div style="display: flex; justify-content: flex-end; border-top: 1px solid #f0ebdc; padding-top: 20px;">
+        <div style="width: 250px; text-align: right;">
+          <div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; color: #800020;">
+            <span>Grand Total:</span>
+            <span>₹${sale.total_amount}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Note -->
+      <div style="margin-top: 50px; text-align: center; border-top: 1px dashed #f0ebdc; padding-top: 20px; font-size: 12px; color: #736e67;">
+        <p style="margin: 0 0 6px 0; font-weight: 500;">Thank you for shopping with Shree Shyam Collection!</p>
+        <p style="font-size: 11px; color: #999; margin: 0;">This is a computer-generated invoice and does not require a physical signature.</p>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(container);
+
+  const opt = {
+    margin:       [12, 12, 12, 12],
+    filename:     `Invoice_${shortId}.pdf`,
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  try {
+    await html2pdf().set(opt).from(container).save();
+  } catch (err) {
+    console.error("PDF generation failed:", err);
+  } finally {
+    document.body.removeChild(container);
+  }
+}
+
 async function initInvoiceView() {
   const urlParams = new URLSearchParams(window.location.search);
   const saleId = urlParams.get('id');
@@ -277,7 +396,33 @@ async function initInvoiceView() {
   const tbody = document.getElementById('invoice-items-tbody');
 
   if (printBtn) {
-    printBtn.onclick = () => window.print();
+    printBtn.onclick = async () => {
+      printBtn.disabled = true;
+      const originalText = printBtn.textContent;
+      printBtn.textContent = "Generating PDF...";
+      try {
+        if (saleId && supabase) {
+          const { data: sale } = await supabase
+            .from('sales')
+            .select('*')
+            .eq('id', saleId)
+            .single();
+          if (sale) {
+            await downloadInvoicePDF(sale);
+          } else {
+            window.print();
+          }
+        } else {
+          window.print();
+        }
+      } catch (err) {
+        console.error("PDF download failed, falling back to window.print:", err);
+        window.print();
+      } finally {
+        printBtn.textContent = originalText;
+        printBtn.disabled = false;
+      }
+    };
   }
   if (backBtn) {
     backBtn.onclick = () => {
@@ -1031,8 +1176,46 @@ function setupOwnerEventListeners() {
       });
       const targetPanel = document.getElementById(targetTabId);
       if (targetPanel) targetPanel.classList.remove('hidden');
+
+      // Auto-close sidebar on mobile
+      if (window.innerWidth <= 992) {
+        closeSidebar();
+      }
     });
   });
+
+  // Collapsible Left Sidebar Events
+  const btnHamburger = document.getElementById('btn-hamburger');
+  const btnCloseSidebar = document.getElementById('btn-close-sidebar');
+  const sidebarOverlay = document.getElementById('sidebar-overlay');
+  const ownerSidebar = document.getElementById('owner-sidebar');
+  const ownerMain = document.getElementById('owner-main');
+
+  function toggleSidebar() {
+    if (ownerSidebar) ownerSidebar.classList.toggle('collapsed');
+    if (ownerMain) ownerMain.classList.toggle('expanded');
+    if (window.innerWidth <= 992) {
+      if (ownerSidebar) ownerSidebar.classList.toggle('active');
+      if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
+    }
+  }
+
+  function closeSidebar() {
+    if (ownerSidebar) ownerSidebar.classList.add('collapsed');
+    if (ownerMain) ownerMain.classList.add('expanded');
+    if (ownerSidebar) ownerSidebar.classList.remove('active');
+    if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+  }
+
+  if (btnHamburger) {
+    btnHamburger.addEventListener('click', toggleSidebar);
+  }
+  if (btnCloseSidebar) {
+    btnCloseSidebar.addEventListener('click', closeSidebar);
+  }
+  if (sidebarOverlay) {
+    sidebarOverlay.addEventListener('click', closeSidebar);
+  }
 
   // Settings Modal Toggle (Owner Portal Gear Button)
   const btnSettingsOwner = document.getElementById('btn-settings-owner');
@@ -1581,6 +1764,7 @@ function setupOwnerEventListeners() {
           <th>Items Sold</th>
           <th>Total Paid</th>
           <th>Date</th>
+          <th>Actions</th>
         `;
       } else {
         theadRow.innerHTML = `
@@ -1731,6 +1915,45 @@ function setupOwnerEventListeners() {
   const historyTbody = document.getElementById('history-tbody');
   if (historyTbody) {
     historyTbody.addEventListener('click', async (e) => {
+      // PDF download for Stall Sales
+      const btnPdf = e.target.closest('.btn-table-pdf-download');
+      if (btnPdf) {
+        const saleId = btnPdf.getAttribute('data-sale-id');
+        if (saleId) {
+          btnPdf.disabled = true;
+          const originalText = btnPdf.textContent;
+          btnPdf.textContent = "...";
+          try {
+            const { data: sale, error } = await supabase
+              .from('sales')
+              .select('*')
+              .eq('id', saleId)
+              .single();
+            if (!error && sale) {
+              await downloadInvoicePDF(sale);
+            } else {
+              alert("Failed to load invoice details: " + (error ? error.message : "Not found"));
+            }
+          } catch (err) {
+            console.error("PDF download failed:", err);
+          } finally {
+            if (btnPdf) {
+              btnPdf.disabled = false;
+              btnPdf.textContent = originalText;
+            }
+          }
+        }
+      }
+
+      // View invoice details page
+      const btnView = e.target.closest('.btn-table-view-invoice');
+      if (btnView) {
+        const saleId = btnView.getAttribute('data-sale-id');
+        if (saleId) {
+          window.open(`${window.location.origin}/?view=invoice&id=${saleId}`, '_blank');
+        }
+      }
+
       const btnCancel = e.target.closest('.btn-table-cancel');
       if (btnCancel) {
         const orderId = btnCancel.getAttribute('data-order-id');
@@ -1874,8 +2097,7 @@ function setupOwnerEventListeners() {
         // 3. Clear form inputs
         formSimpleInvoice.reset();
 
-        // 4. Construct WhatsApp Message with the hosted invoice URL
-        const invoiceUrl = `${window.location.origin}/?view=invoice&id=${newSale.id}`;
+        // 4. Construct WhatsApp Message
         const itemsSummary = invoiceItems.map(i => `- ${i.name} x ${i.qty} @ ₹${i.price}`).join('\n');
         
         const messageText = `Hello ${name}, thank you for shopping with Shree Shyam Collection!
@@ -1889,8 +2111,7 @@ ${itemsSummary}
 
 Total Amount: ₹${totalAmount}
 
-You can view and download your full PDF Invoice here:
-${invoiceUrl}
+(Please find the attached PDF Invoice)
 
 Please scan our PhonePe QR code to make the payment:
 ${window.location.origin}/upi_qr.jpg
@@ -1899,14 +2120,17 @@ Thank you!
 Sejal Jain (7028774699)
 Shree Shyam Collection`;
 
-        // 5. Open WhatsApp with prefilled message
+        // 5. Download the PDF client-side
+        await downloadInvoicePDF(newSale);
+
+        // 6. Open WhatsApp with prefilled message
         const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`;
         window.open(waUrl, '_blank');
 
-        // 6. Refresh Stall Sales logs list in dashboard
+        // 7. Refresh Stall Sales logs list in dashboard
         await loadHistoryRecords();
 
-        alert(`Invoice created successfully! WhatsApp redirect opened.`);
+        alert(`Invoice created successfully!\n\n1. The PDF invoice has been downloaded to your device.\n2. WhatsApp has been opened. Please attach the downloaded PDF to the chat.`);
       } catch (err) {
         console.error("Failed to create simple invoice:", err);
         alert(`Failed to create invoice: ${err.message}`);
@@ -2347,7 +2571,7 @@ async function loadHistoryRecords() {
       if (error) throw error;
       
       if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="text-center">No sales invoices recorded yet.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center">No sales invoices recorded yet.</td></tr>`;
         return;
       }
 
@@ -2364,6 +2588,12 @@ async function loadHistoryRecords() {
             <td data-label="Items Sold" style="white-space:normal; font-size:0.85rem;">${itemsStr}</td>
             <td data-label="Total Paid" style="font-weight:700; color:var(--color-primary);">₹${sale.total_amount}</td>
             <td data-label="Date" style="font-size:0.82rem; color:var(--color-text-muted);">${dateStr}</td>
+            <td data-label="Actions">
+              <div style="display:flex; flex-direction:column; gap:4px; max-width:80px;">
+                <button class="btn-table-pdf-download btn-secondary" style="padding: 4px 8px; font-size: 0.75rem;" data-sale-id="${sale.id}">PDF</button>
+                <button class="btn-table-view-invoice btn-primary" style="padding: 4px 8px; font-size: 0.75rem;" data-sale-id="${sale.id}">View</button>
+              </div>
+            </td>
           </tr>
         `;
       }).join('');
